@@ -12,7 +12,6 @@ import (
 
 const (
 	driverName = "hdb"
-	//hdbDsn     = "***REMOVED***"
 )
 
 var (
