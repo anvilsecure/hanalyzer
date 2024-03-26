@@ -1,11 +1,5 @@
 name: Run Gosec
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [pull_request, push, workflow_dispatch]
 jobs:
   tests:
     runs-on: ubuntu-latest
