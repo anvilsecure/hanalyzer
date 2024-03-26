@@ -6,7 +6,6 @@ import (
 	"hana/config"
 	"log"
 
-	// Register hdb driver.
 	_ "github.com/SAP/go-hdb/driver"
 )
 
