@@ -2,3 +2,4 @@
 id = "hdb-connection-string"
 description = "Rule to detect hdb connection strings"
 regex = '''"hdb:\/\/[^:]+:(.+)@[^\n]*'''
+tags = ["hdb","db","connection"]
