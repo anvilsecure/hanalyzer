@@ -3,3 +3,10 @@ id = "hdb-connection-string"
 description = "Rule to detect hdb connection strings"
 regex = '''"hdb:\/\/[^:]+:(.+)@[^\n]*'''
 tags = ["hdb","db","connection"]
+
+[rules.allowlist]
+description = "ignore format string"
+regexTarget = "match"
+regexes = [
+  '''hdb://%s:%s@%s:%d''',
+]
