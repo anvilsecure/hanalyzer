@@ -1,8 +1,10 @@
-hxeadm password `secret-demagogo1`
-Master password `Despicable-dishwasher2`
-SYSTEM `Despicable-dishwasher2`
-XSA_ADMIN `Despicable-dishwasher2`
-XSA_DEV `Despicable-dishwasher2`
+<img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
+
+* hxeadm password `secret-demagogo1`
+* Master password `Despicable-dishwasher2`
+* SYSTEM `Despicable-dishwasher2`
+* XSA_ADMIN `Despicable-dishwasher2`
+* XSA_DEV `Despicable-dishwasher2`
 
 http://hxehost:8090
 https://hxehost:39030
