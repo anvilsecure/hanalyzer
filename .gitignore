@@ -2,3 +2,4 @@ docs/**
 hana/**
 conf.yml
 *.exe
+replace-text.txt
