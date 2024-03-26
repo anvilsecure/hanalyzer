@@ -6,8 +6,8 @@
 * XSA_ADMIN `Despicable-dishwasher2`
 * XSA_DEV `Despicable-dishwasher2`
 
-http://hxehost:8090
-https://hxehost:39030
+* http://hxehost:8090
+* https://hxehost:39030
 
 ssh hxeadm@hxehost
 
@@ -57,3 +57,5 @@ alter user XSA_DEV password "Despicable-dishwasher2";
 > * XSA_DEV
 
 Before setup startup the host and let it start all the processes, otherwise it could be possible that the setup script will not be able to connect to every process.
+
+**!! VMs expose port 39015**
