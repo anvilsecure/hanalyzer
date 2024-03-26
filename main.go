@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
+	"hana/config"
 	"log"
 
 	// Register hdb driver.
@@ -10,8 +12,26 @@ import (
 
 const (
 	driverName = "hdb"
-	hdbDsn     = "***REMOVED***"
+	//hdbDsn     = "***REMOVED***"
 )
+
+var (
+	dbConfig     config.DatabaseConfig
+	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
+	hdbDsn       string
+)
+
+func init() {
+	config.LoadConfig()
+	dbConfig = config.DBConfig
+	hdbDsn = fmt.Sprintf(
+		hdbDsnFormat,
+		dbConfig.Database.Username,
+		dbConfig.Database.Password,
+		dbConfig.Database.Host,
+		dbConfig.Database.Port,
+	)
+}
 
 func main() {
 	db, err := sql.Open(driverName, hdbDsn)
