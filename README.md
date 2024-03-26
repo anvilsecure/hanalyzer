@@ -1,0 +1,57 @@
+hxeadm password `secret-demagogo1`
+Master password `Despicable-dishwasher2`
+SYSTEM `Despicable-dishwasher2`
+XSA_ADMIN `Despicable-dishwasher2`
+XSA_DEV `Despicable-dishwasher2`
+
+http://hxehost:8090
+https://hxehost:39030
+
+ssh hxeadm@hxehost
+
+IF using a VM, after the setup process you will encounter the following error
+
+```
+Free and used memory in the system
+==================================
+Before collection
+-------------------------------------------------------------------------
+             total       used       free     shared    buffers     cached
+Mem:           11G        10G       1.5G        68M       2.0M       2.4G
+-/+ buffers/cache:       7.8G       3.9G
+Swap:         4.0G         0B       4.0G
+After  collection
+-------------------------------------------------------------------------
+             total       used       free     shared    buffers     cached
+Mem:           11G        10G       1.6G        68M       2.0M       2.6G
+-/+ buffers/cache:       7.5G       4.3G
+Swap:         4.0G         0B       4.0G
+
+Please wait while XSA starts.  This may take a while...OK
+Change XSA_ADMIN user password on SystemDB database...
+Change XSA_DEV user password on SystemDB database...
+* 10: authentication failed SQLSTATE: 28000
+Password already changed.  However, the new password you specified is invalid.
+```
+
+This is solved [here](https://community.sap.com/t5/technology-q-a/hana-express-edition-28000-password-already-changed/qaq-p/12321995#answer-13321675)
+
+```
+HDB start
+XSA reset-certificate
+ 
+hdbsql -u system -n hxehost:39013
+alter user XSA_ADMIN activate user now;
+alter user XSA_ADMIN password "Despicable-dishwasher2";
+alter user XSA_DEV activate user now; 
+alter user XSA_DEV password "Despicable-dishwasher2"; 
+```
+
+> Caveat!!
+> For the setup script to work you need the same password for
+> * Master password 
+> * SYSTEM 
+> * XSA_ADMIN
+> * XSA_DEV
+
+Before setup startup the host and let it start all the processes, otherwise it could be possible that the setup script will not be able to connect to every process.
