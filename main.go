@@ -12,7 +12,6 @@ import (
 
 const (
 	driverName = "hdb"
-	//hdbDsn     = "hdb://SYSTEM:Despicable-dishwasher2@host:port"
 )
 
 var (
