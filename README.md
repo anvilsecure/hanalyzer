@@ -1,11 +1,5 @@
 <img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
 
-* hxeadm password `secret-demagogo1`
-* Master password `Despicable-dishwasher2`
-* SYSTEM `Despicable-dishwasher2`
-* XSA_ADMIN `Despicable-dishwasher2`
-* XSA_DEV `Despicable-dishwasher2`
-
 * http://hxehost:8090
 * https://hxehost:39030
 
@@ -44,9 +38,9 @@ XSA reset-certificate
  
 hdbsql -u system -n hxehost:39013
 alter user XSA_ADMIN activate user now;
-alter user XSA_ADMIN password "Despicable-dishwasher2";
+alter user XSA_ADMIN password "<PASSWORD>";
 alter user XSA_DEV activate user now; 
-alter user XSA_DEV password "Despicable-dishwasher2"; 
+alter user XSA_DEV password "<PASSWORD>"; 
 ```
 
 > Caveat!!
@@ -59,3 +53,17 @@ alter user XSA_DEV password "Despicable-dishwasher2";
 Before setup startup the host and let it start all the processes, otherwise it could be possible that the setup script will not be able to connect to every process.
 
 **!! VMs expose port 39015**
+
+## Roadmap
+### Porting from @gvb
+- [x] check_system_user(cursor)
+- [ ] check_password_lifetime(cursor)
+- [ ] check_critical_combinations_system_privileges(cursor)
+- [ ] check_data_admin_system_privilege(cursor)
+- [ ] check_development_system_privilege(cursor)
+- [ ] check_analytic_privilege(cursor)
+- [ ] check_debug_privileges(cursor)
+- [ ] check_predefined_catalog_roles(cursor)
+- [ ] check_client_user_parameter(cursor)
+- [ ] check_os_file_permissions(cursor)
+- [ ] check_audit_configuration(cursor)
