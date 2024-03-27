@@ -77,16 +77,22 @@ func Query(q string) Results {
 	for i := 0; i < len(colNames); i++ {
 		colPtrs[i] = &cols[i]
 	}
+	//fmt.Printf("\nRes before rows.Next(): %v\n\n", res)
+	counter := 0
 	for rows.Next() {
-		var myMap = make(map[string]interface{})
 		err = rows.Scan(colPtrs...)
 		if err != nil {
 			log.Fatal(err)
 		}
+		var myMap = make(map[string]interface{})
 		for i, col := range cols {
 			myMap[colNames[i]] = col
 		}
 		res = append(res, myMap)
+		//fmt.Println(myMap)
+		//fmt.Printf("Res at iteration #%d: %v\n\n\n", counter, res)
+		counter++
 	}
+	//fmt.Println(res)
 	return res
 }

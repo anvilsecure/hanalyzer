@@ -3,6 +3,7 @@ package checks
 import (
 	"fmt"
 	"hana/db"
+	"hana/utils"
 	"log"
 	"reflect"
 	"time"
@@ -13,7 +14,7 @@ const (
 	checkPasswordLifetime string = `SELECT	USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
 )
 
-var AllChecks []Check
+var AllChecks []*Check
 
 type Check struct {
 	Name           string
@@ -21,7 +22,7 @@ type Check struct {
 	Link           string
 	Recommendation string
 	Query          string
-	Raws           db.Results
+	Results        db.Results
 	Result         bool
 }
 
@@ -29,6 +30,7 @@ func (check *Check) ExecuteQuery() {
 	res := db.Query(check.Query)
 	// Do something with the map
 	for _, r := range res {
+		var resMap = make(map[string]interface{})
 		for key, val := range r {
 			switch t := val.(type) {
 			case []uint8:
@@ -45,22 +47,75 @@ func (check *Check) ExecuteQuery() {
 				}
 			}
 			//fmt.Println("Key:", key, "Val:", val, "Value Type:", reflect.TypeOf(val))
-			fmt.Printf("%s: %s\n", key, val)
+			resMap[key] = val
 		}
+		check.Results = append(check.Results, resMap)
 	}
 }
 
-func newCheck(name, description, link, recommendation, query string) Check {
+func ExecuteQueries() {
+	for _, check := range AllChecks {
+		check.ExecuteQuery()
+	}
+}
+
+func EvaluateResults() {
+	for _, check := range AllChecks {
+		utils.Warning("Check: %s\n", check.Name)
+		switch check.Name {
+		case "CheckSystemUser":
+			if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
+				utils.Ok(
+					"[✔] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
+					check.Results[0]["USER_DEACTIVATED"],
+				)
+				utils.Info(
+					"It was deactivated in date %s and last successful connection was in date %s.\n",
+					check.Results[0]["DEACTIVATION_TIME"],
+					check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
+				)
+			} else {
+				utils.Error(
+					"[✘] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
+					check.Results[0]["USER_DEACTIVATED"],
+				)
+				utils.Info(
+					"Last successful connection was in date %s.\n",
+					check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
+				)
+			}
+			break
+		case "CheckPasswordLifetime":
+			for _, r := range check.Results {
+				for key, val := range r {
+					fmt.Printf("%s: %s\n", key, val)
+				}
+			}
+			break
+		default:
+			break
+		}
+		fmt.Println("-----------")
+		/* for _, r := range check.Results {
+			for key, val := range r {
+				fmt.Printf("%s: %s\n", key, val)
+			}
+		} */
+	}
+
+}
+
+func newCheck(name, description, link, recommendation, query string) *Check {
 	if name == "" || query == "" {
 		log.Fatalf("Query creation failed. Name and Query fields required.")
 	}
-	return Check{
+	return &Check{
 		Name:           name,
 		Description:    description,
 		Link:           link,
 		Recommendation: recommendation,
 		Query:          query,
-		Raws:           db.Results{},
+		Results:        db.Results{},
 		Result:         false,
 	}
 }
