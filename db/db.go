@@ -61,7 +61,6 @@ func connect() error {
 type Results []map[string]interface{}
 
 func Query(q string) Results {
-	var myMap = make(map[string]interface{})
 	var res Results
 	rows, err := sqlDB.Query(q)
 	defer rows.Close()
@@ -79,6 +78,7 @@ func Query(q string) Results {
 		colPtrs[i] = &cols[i]
 	}
 	for rows.Next() {
+		var myMap = make(map[string]interface{})
 		err = rows.Scan(colPtrs...)
 		if err != nil {
 			log.Fatal(err)
