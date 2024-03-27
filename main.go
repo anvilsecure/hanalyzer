@@ -1,44 +1,12 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-	"hana/config"
-	"log"
-
-	_ "github.com/SAP/go-hdb/driver"
+	"hana/checks"
+	"hana/db"
 )
-
-const (
-	driverName = "hdb"
-)
-
-var (
-	dbConfig     config.DatabaseConfig
-	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
-	hdbDsn       string
-)
-
-func init() {
-	config.LoadConfig()
-	dbConfig = config.DBConfig
-	hdbDsn = fmt.Sprintf(
-		hdbDsnFormat,
-		dbConfig.Database.Username,
-		dbConfig.Database.Password,
-		dbConfig.Database.Host,
-		dbConfig.Database.Port,
-	)
-}
 
 func main() {
-	db, err := sql.Open(driverName, hdbDsn)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer db.Close()
-
-	if err := db.Ping(); err != nil {
-		log.Panic(err)
+	for _, check := range checks.AllChecks {
+		db.Query(check)
 	}
 }

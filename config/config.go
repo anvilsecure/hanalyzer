@@ -21,7 +21,7 @@ type DatabaseConfig struct {
 }
 
 // LoadConfig reads and parses conf.yml file
-func LoadConfig() {
+func init() {
 	// Read config.yml file
 	data, err := os.ReadFile("conf.yml")
 	if err != nil {
