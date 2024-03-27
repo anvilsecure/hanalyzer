@@ -21,7 +21,7 @@ type Check struct {
 	Link           string
 	Recommendation string
 	Query          string
-	Raws           map[string]interface{}
+	Raws           db.Results
 	Result         bool
 }
 
@@ -60,7 +60,7 @@ func newCheck(name, description, link, recommendation, query string) Check {
 		Link:           link,
 		Recommendation: recommendation,
 		Query:          query,
-		Raws:           map[string]interface{}{},
+		Raws:           db.Results{},
 		Result:         false,
 	}
 }

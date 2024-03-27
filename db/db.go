@@ -14,6 +14,8 @@ type Database struct {
 	*sql.DB
 }
 
+type Results []map[string]interface{}
+
 var (
 	dbConfig     config.DatabaseConfig
 	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
@@ -57,8 +59,6 @@ func connect() error {
 	}
 	return err
 }
-
-type Results []map[string]interface{}
 
 func Query(q string) Results {
 	var res Results
