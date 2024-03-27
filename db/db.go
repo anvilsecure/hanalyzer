@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hana/config"
 	"log"
-	"reflect"
 
 	_ "github.com/SAP/go-hdb/driver"
 )
@@ -59,8 +58,11 @@ func connect() error {
 	return err
 }
 
-func Query(q string) {
+type Results []map[string]interface{}
+
+func Query(q string) Results {
 	var myMap = make(map[string]interface{})
+	var res Results
 	rows, err := sqlDB.Query(q)
 	defer rows.Close()
 	if err != nil {
@@ -84,9 +86,7 @@ func Query(q string) {
 		for i, col := range cols {
 			myMap[colNames[i]] = col
 		}
-		// Do something with the map
-		for key, val := range myMap {
-			fmt.Println("Key:", key, "Val:", val, "Value Type:", reflect.TypeOf(val))
-		}
+		res = append(res, myMap)
 	}
+	return res
 }
