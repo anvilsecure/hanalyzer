@@ -57,7 +57,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 ## Roadmap
 ### Porting from @gvb
 - [x] check_system_user(cursor)
-- [ ] check_password_lifetime(cursor)
+- [x] check_password_lifetime(cursor)
 - [ ] check_critical_combinations_system_privileges(cursor)
 - [ ] check_data_admin_system_privilege(cursor)
 - [ ] check_development_system_privilege(cursor)

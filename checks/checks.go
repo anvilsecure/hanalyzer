@@ -6,6 +6,7 @@ import (
 	"hana/utils"
 	"log"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -14,7 +15,10 @@ const (
 	checkPasswordLifetime string = `SELECT	USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
 )
 
-var AllChecks []*Check
+var (
+	AllChecks        []*Check
+	PREDEFINED_USERS = []string{"SYSTEM", "SYS", "_SYS_AFL", "_SYS_EPM", "_SYS_REPO", "_SYS_SQL_ANALYZER", "_SYS_STATISTICS", "_SYS_TASK", "_SYS_WORKLOAD_REPLAY", "_SYS_XB", "_SYS_TABLE_REPLICAS", "SYS_TABLE_REPLICA_DATA"}
+)
 
 type Check struct {
 	Name           string
@@ -86,10 +90,17 @@ func EvaluateResults() {
 			}
 			break
 		case "CheckPasswordLifetime":
+			var users []map[string]interface{}
+			utils.Error("[✘] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n")
 			for _, r := range check.Results {
-				for key, val := range r {
-					fmt.Printf("%s: %s\n", key, val)
+				user := r["USER_NAME"].(string)
+				if (isPredefined(user) && strings.HasPrefix(user, "_SYS_")) || strings.HasPrefix(user, "XSSQLCC_AUTO_USER_") {
+					continue
 				}
+				users = append(users, r)
+			}
+			for _, u := range users {
+				fmt.Println("  -", u["USER_NAME"].(string))
 			}
 			break
 		default:
