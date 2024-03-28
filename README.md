@@ -60,7 +60,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Password lifetime
 - [x] Critical combinations system privileges
 - [x] Data admin system privilege
-- [ ] Development system privilege
+- [x] Development system privilege
 - [ ] Analytic privilege
 - [ ] Debug privileges
 - [ ] Predefined catalog roles

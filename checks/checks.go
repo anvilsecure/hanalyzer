@@ -182,7 +182,7 @@ func EvaluateResults() {
 			} else {
 				utils.Ok("[+] No dangerous privilege combinations found.\n")
 			}
-		case "SystemPrivilegeDataAdmin":
+		case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment":
 			if len(check.Results) > 0 {
 				grantees := make(map[string]entity)
 				utils.Error("[!] The following users/roles have %s permission:\n", check.Parameters[0])
@@ -285,6 +285,19 @@ func init() {
 		recommendation,
 		dataAdmin,
 		[]string{"DATA ADMIN"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "SystemPrivilegeDevelopment"
+	description = "The system privilege DEVELOPMENT authorizes some internal ALTER SYSTEM commands. By default, only the users SYSTEM and _SYS_REPO have this privilege."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privilege%3A-development"
+	recommendation = "No user or role in a production database should have this privilege."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		dataAdmin,
+		[]string{"DEVELOPMENT"},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 }
