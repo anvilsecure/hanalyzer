@@ -67,3 +67,6 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [ ] check_client_user_parameter(cursor)
 - [ ] check_os_file_permissions(cursor)
 - [ ] check_audit_configuration(cursor)
+
+### Other checks
+- [X] System Privilege
