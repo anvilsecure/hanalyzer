@@ -61,7 +61,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Critical combinations system privileges
 - [x] Data admin system privilege
 - [x] Development system privilege
-- [ ] Analytic privilege
+- [x] Analytic privilege
 - [ ] Debug privileges
 - [ ] Predefined catalog roles
 - [ ] Client user parameter

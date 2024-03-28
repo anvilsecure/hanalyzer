@@ -198,7 +198,25 @@ func EvaluateResults() {
 					fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
 				}
 			} else {
-				utils.Ok("[+] No user/role has %s permission:\n", check.Parameters[0])
+				utils.Ok("[+] No user/role has %s permission.\n", check.Parameters[0])
+			}
+		case "AnalyticPrivilege":
+			if len(check.Results) > 0 {
+				grantees := make(map[string]entity)
+				utils.Error("[!] The following users/roles have _SYS_BI_CP_ALL analytic privilege:\n")
+				for _, r := range check.Results {
+					user := r["GRANTEE"].(string)
+					grantees[user] = entity{
+						Type:       r["GRANTEE_TYPE"].(string),
+						Name:       user,
+						Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+					}
+				}
+				for k, grantee := range grantees {
+					fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+				}
+			} else {
+				utils.Ok("[+] No user/role has _SYS_BI_CP_ALL analytic privilege.\n")
 			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
@@ -298,6 +316,19 @@ func init() {
 		recommendation,
 		dataAdmin,
 		[]string{"DEVELOPMENT"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "AnalyticPrivilege"
+	description = "The predefined analytic privilege _SYS_BI_CP_ALL potentially allows a user to access all the data in activated views that are protected by XML-based analytic privileges, regardless of any other XML-based analytic privileges that apply. Only the predefined roles CONTENT ADMIN and MODELING have the analytic privilege _SYS_BI_CP_ALL by default. By default, only the user SYSTEM has these roles."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#analytic-privilege%3A-_sys_bi_cp_all"
+	recommendation = "Do not grant this privilege to any user or role in a production database."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		analyticPrivilege,
+		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 }
