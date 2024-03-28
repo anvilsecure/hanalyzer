@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"fmt"
 	"hana/db"
 	"log"
 )
@@ -76,4 +77,23 @@ func difference(a, b []string) []string {
 		}
 	}
 	return diff
+}
+
+func (check *Check) listGrantees() map[string]entity {
+	grantees := make(map[string]entity)
+	for _, r := range check.Results {
+		user := r["GRANTEE"].(string)
+		grantees[user] = entity{
+			Type:       r["GRANTEE_TYPE"].(string),
+			Name:       user,
+			Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+		}
+	}
+	return grantees
+}
+
+func printGrantees(grantees map[string]entity) {
+	for k, grantee := range grantees {
+		fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+	}
 }

@@ -111,34 +111,29 @@ func EvaluateResults() {
 				fmt.Println("  -", u["USER_NAME"].(string))
 			}
 		case "SystemPrivileges":
-			grantees := make(map[string]entity)
-			privileges := make(map[string][]entity)
-			utils.Error("[!] Please review the following entities (users/roles) because they might have too high privileges:\n")
-			utils.Info("[I] Breakdown per grantee\n")
-			//fmt.Println(check.Results)
-			for _, r := range check.Results {
-				user := r["GRANTEE"].(string)
-				grantees[user] = entity{
-					Type:       r["GRANTEE_TYPE"].(string),
-					Name:       user,
-					Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+			if len(check.Results) > 0 {
+				privileges := make(map[string][]entity)
+				utils.Error("[!] Please review the following entities (users/roles) because they might have too high privileges:\n")
+				utils.Info("[I] Breakdown per grantee\n")
+				grantees := check.listGrantees()
+				for k, grantee := range grantees {
+					fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+					for _, p := range grantee.Privileges {
+						fmt.Println("    - ", p)
+					}
+					for _, p := range grantee.Privileges {
+						privileges[p] = append(privileges[p], grantee)
+					}
 				}
-			}
-			for k, grantee := range grantees {
-				fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
-				for _, p := range grantee.Privileges {
-					fmt.Println("    - ", p)
+				utils.Info("[I] Breakdown per privilege\n")
+				for privilege, entities := range privileges {
+					fmt.Printf("  - %s\n", privilege)
+					for _, entity := range entities {
+						fmt.Printf("    - %s (type: %s)\n", entity.Name, entity.Type)
+					}
 				}
-				for _, p := range grantee.Privileges {
-					privileges[p] = append(privileges[p], grantee)
-				}
-			}
-			utils.Info("[I] Breakdown per privilege\n")
-			for privilege, entities := range privileges {
-				fmt.Printf("  - %s\n", privilege)
-				for _, entity := range entities {
-					fmt.Printf("    - %s (type: %s)\n", entity.Name, entity.Type)
-				}
+			} else {
+				utils.Ok("[+] No privilege was found to be reviewed.\n")
 			}
 		case "CriticalCombinations":
 			users := make(map[string]entity)
@@ -182,41 +177,29 @@ func EvaluateResults() {
 			} else {
 				utils.Ok("[+] No dangerous privilege combinations found.\n")
 			}
-		case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment":
+		case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment", "AnalyticPrivilege", "DebugPrivilege":
 			if len(check.Results) > 0 {
-				grantees := make(map[string]entity)
-				utils.Error("[!] The following users/roles have %s permission:\n", check.Parameters[0])
-				for _, r := range check.Results {
-					user := r["GRANTEE"].(string)
-					grantees[user] = entity{
-						Type:       r["GRANTEE_TYPE"].(string),
-						Name:       user,
-						Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
-					}
-				}
-				for k, grantee := range grantees {
-					fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
-				}
+				utils.Error("[!] The following users/roles have %s privilege:\n", check.Parameters[0])
+				grantees := check.listGrantees()
+				printGrantees(grantees)
 			} else {
-				utils.Ok("[+] No user/role has %s permission.\n", check.Parameters[0])
+				utils.Ok("[+] No user/role has %s privilege.\n", check.Parameters[0])
 			}
-		case "AnalyticPrivilege":
+		case "PredefinedCatalogRole":
 			if len(check.Results) > 0 {
+				utils.Error("[!] The following users/roles have CONTENT_ADMIN role:\n")
 				grantees := make(map[string]entity)
-				utils.Error("[!] The following users/roles have _SYS_BI_CP_ALL analytic privilege:\n")
 				for _, r := range check.Results {
 					user := r["GRANTEE"].(string)
 					grantees[user] = entity{
 						Type:       r["GRANTEE_TYPE"].(string),
 						Name:       user,
-						Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+						Privileges: append(grantees[user].Privileges, r["ROLE_NAME"].(string)),
 					}
 				}
-				for k, grantee := range grantees {
-					fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
-				}
+				printGrantees(grantees)
 			} else {
-				utils.Ok("[+] No user/role has _SYS_BI_CP_ALL analytic privilege.\n")
+				utils.Ok("[+] No user/role has CONTENT_ADMIN role.\n")
 			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
@@ -328,6 +311,32 @@ func init() {
 		link,
 		recommendation,
 		analyticPrivilege,
+		[]string{"_SYS_BI_CP_ALL"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "DebugPrivilege"
+	description = "No user has debug privileges"
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#debug-privileges"
+	recommendation = "The privileges DEBUG and ATTACH DEBUGGER should not be assigned to any user for any object in production systems."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		debugPrivilege,
+		[]string{"DEBUG"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "PredefinedCatalogRole"
+	description = "The role CONTENT_ADMIN contains all privileges required for working with information models in the repository of the SAP HANA database. The user SYSTEM has the role CONTENT_ADMIN by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#predefined-catalog-role-content_admin"
+	recommendation = "Only the database user used to perform system updates should have the role CONTENT_ADMIN. Otherwise do not grant this role to users, particularly in production databases. It should be used as a role template only."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		predefinedCatalogRole,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////

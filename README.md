@@ -62,8 +62,8 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Data admin system privilege
 - [x] Development system privilege
 - [x] Analytic privilege
-- [ ] Debug privileges
-- [ ] Predefined catalog roles
+- [x] Debug privileges
+- [x] Predefined catalog roles
 - [ ] Client user parameter
 - [ ] OS file permissions
 - [ ] Audit configuration
