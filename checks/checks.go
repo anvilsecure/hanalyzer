@@ -136,6 +136,48 @@ func EvaluateResults() {
 					fmt.Printf("    - %s (type: %s)\n", entity.Name, entity.Type)
 				}
 			}
+		case "CriticalCombinations":
+			users := make(map[string]entity)
+			for _, r := range check.Results {
+				user := r["USER_NAME"].(string)
+				if user == "SYSTEM" || user == "_SYS_REPO" {
+					continue
+				}
+				users[user] = entity{
+					Name:       user,
+					Privileges: append(users[user].Privileges, r["PRIVILEGE"].(string)),
+				}
+			}
+			issues := make(map[string]entity)
+			for _, u := range users {
+				for _, couple := range DANGEROUS_COMBO {
+					if subslice(couple, u.Privileges) {
+						issues[u.Name] = u
+					}
+				}
+			}
+			if len(issues) > 0 {
+				utils.Error("[!] The following users have dangerous privileges combinations.\n")
+				var printed []string
+				for _, i := range issues {
+					fmt.Println("  - ", i.Name)
+					for _, p := range i.Privileges {
+						for _, couple := range DANGEROUS_COMBO {
+							if contains(couple, p) {
+								fmt.Printf("    - %s\n", utils.Red(p))
+								printed = append(printed, p)
+								break
+							}
+						}
+					}
+					notPrinted := difference(i.Privileges, printed)
+					for _, p := range notPrinted {
+						fmt.Printf("    - %s\n", p)
+					}
+				}
+			} else {
+				utils.Ok("[+] No dangerous privilege combinations found.S\n")
+			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -167,6 +209,7 @@ func newCheck(name, description, link, recommendation, query string, parameters 
 }
 
 func init() {
+	getAllUsers()
 	//////////////////////////////////////////////////////////////////////////////
 	name := "CheckSystemUser"
 	description := "The database user SYSTEM is the most powerful database user with irrevocable system privileges. The SYSTEM user is active after database creation."
@@ -200,7 +243,23 @@ func init() {
 	recommendation = "System privileges should only ever be granted to users that actually need them. In addition, several system privileges grant powerful permissions, for example, the ability to delete data and to view data unfiltered and should be granted with extra care."
 	p := "'" + strings.Join(ADMIN_PRIVILEGES, "', '") + "'"
 	stmt := fmt.Sprintf(systemPrivileges, p)
-	fmt.Println(stmt)
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		stmt,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "CriticalCombinations"
+	description = "System privileges authorize database-wide administration commands. The users SYSTEM and _SYS_REPO have all these privileges by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privileges"
+	recommendation = "System privileges should only ever be granted to users that actually need them. In addition, several system privileges grant powerful permissions, for example, the ability to delete data and to view data unfiltered and should be granted with extra care."
+	//SELECT USER_NAME, PRIVILEGE FROM "PUBLIC"."EFFECTIVE_PRIVILEGES" WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND (USER_NAME = 'SYSTEM' OR USER_NAME = '_SYS_XB')
+	p = "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
+	stmt = fmt.Sprintf(criticalCombinations, p)
+	//fmt.Println(stmt)
 	AllChecks = append(AllChecks, newCheck(
 		name,
 		description,

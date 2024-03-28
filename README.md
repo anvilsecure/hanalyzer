@@ -56,17 +56,17 @@ Before setup startup the host and let it start all the processes, otherwise it c
 
 ## Roadmap
 ### Porting from @gvb
-- [x] check_system_user(cursor)
-- [x] check_password_lifetime(cursor)
-- [ ] check_critical_combinations_system_privileges(cursor)
-- [ ] check_data_admin_system_privilege(cursor)
-- [ ] check_development_system_privilege(cursor)
-- [ ] check_analytic_privilege(cursor)
-- [ ] check_debug_privileges(cursor)
-- [ ] check_predefined_catalog_roles(cursor)
-- [ ] check_client_user_parameter(cursor)
-- [ ] check_os_file_permissions(cursor)
-- [ ] check_audit_configuration(cursor)
+- [x] System user
+- [x] Password lifetime
+- [x] Critical combinations system privileges
+- [ ] Data admin system privilege
+- [ ] Development system privilege
+- [ ] Analytic privilege
+- [ ] Debug privileges
+- [ ] Predefined catalog roles
+- [ ] Client user parameter
+- [ ] OS file permissions
+- [ ] Audit configuration
 
 ### Other checks
-- [X] System Privilege
+- [X] System privilege
