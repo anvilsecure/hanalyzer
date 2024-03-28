@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"hana/db"
 	"hana/utils"
-	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -51,11 +50,16 @@ func executeQuery(query string) (results db.Results) {
 }
 
 func prepareAndExecute(check *Check) {
+	if len(check.Parameters) > 1 {
+		utils.Error("We aren't ready yet to prepare statements w/ mutiple parameters :[")
+		os.Exit(1)
+	}
+	var res db.Results
 	for _, p := range check.Parameters {
 		stmt := fmt.Sprintf(check.Query, p)
-		//fmt.Println(stmt)
-		executeQuery(stmt)
+		res = executeQuery(stmt)
 	}
+	check.Results = res
 }
 
 func ExecuteQueries() {
@@ -176,7 +180,25 @@ func EvaluateResults() {
 					}
 				}
 			} else {
-				utils.Ok("[+] No dangerous privilege combinations found.S\n")
+				utils.Ok("[+] No dangerous privilege combinations found.\n")
+			}
+		case "SystemPrivilegeDataAdmin":
+			if len(check.Results) > 0 {
+				grantees := make(map[string]entity)
+				utils.Error("[!] The following users/roles have %s permission:\n", check.Parameters[0])
+				for _, r := range check.Results {
+					user := r["GRANTEE"].(string)
+					grantees[user] = entity{
+						Type:       r["GRANTEE_TYPE"].(string),
+						Name:       user,
+						Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+					}
+				}
+				for k, grantee := range grantees {
+					fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+				}
+			} else {
+				utils.Ok("[+] No user/role has %s permission:\n", check.Parameters[0])
 			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
@@ -190,22 +212,6 @@ func EvaluateResults() {
 		} */
 	}
 
-}
-
-func newCheck(name, description, link, recommendation, query string, parameters []string) *Check {
-	if name == "" || query == "" {
-		log.Fatalf("Query creation failed. Name and Query fields required.")
-	}
-	return &Check{
-		Name:           name,
-		Description:    description,
-		Link:           link,
-		Recommendation: recommendation,
-		Query:          query,
-		Parameters:     parameters,
-		Results:        db.Results{},
-		Result:         false,
-	}
 }
 
 func init() {
@@ -256,7 +262,6 @@ func init() {
 	description = "System privileges authorize database-wide administration commands. The users SYSTEM and _SYS_REPO have all these privileges by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privileges"
 	recommendation = "System privileges should only ever be granted to users that actually need them. In addition, several system privileges grant powerful permissions, for example, the ability to delete data and to view data unfiltered and should be granted with extra care."
-	//SELECT USER_NAME, PRIVILEGE FROM "PUBLIC"."EFFECTIVE_PRIVILEGES" WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND (USER_NAME = 'SYSTEM' OR USER_NAME = '_SYS_XB')
 	p = "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
 	stmt = fmt.Sprintf(criticalCombinations, p)
 	//fmt.Println(stmt)
@@ -267,6 +272,19 @@ func init() {
 		recommendation,
 		stmt,
 		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "SystemPrivilegeDataAdmin"
+	description = "The system privilege DATA ADMIN is a powerful privilege. It authorizes a user to execute all data definition language (DDL) commands in the SAP HANA database. Only the users SYSTEM and _SYS_REPO have this privilege by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privilege%3A-data-admin"
+	recommendation = "No user or role in a production database should have this privilege."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		dataAdmin,
+		[]string{"DATA ADMIN"},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 }

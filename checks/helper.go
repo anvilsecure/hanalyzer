@@ -2,7 +2,24 @@ package checks
 
 import (
 	"hana/db"
+	"log"
 )
+
+func newCheck(name, description, link, recommendation, query string, parameters []string) *Check {
+	if name == "" || query == "" {
+		log.Fatalf("Query creation failed. Name and Query fields required.")
+	}
+	return &Check{
+		Name:           name,
+		Description:    description,
+		Link:           link,
+		Recommendation: recommendation,
+		Query:          query,
+		Parameters:     parameters,
+		Results:        db.Results{},
+		Result:         false,
+	}
+}
 
 func isPredefined(user string) bool {
 	for _, u := range PREDEFINED_USERS {

@@ -59,7 +59,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] System user
 - [x] Password lifetime
 - [x] Critical combinations system privileges
-- [ ] Data admin system privilege
+- [x] Data admin system privilege
 - [ ] Development system privilege
 - [ ] Analytic privilege
 - [ ] Debug privileges
