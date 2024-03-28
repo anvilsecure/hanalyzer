@@ -5,19 +5,10 @@ import (
 	"hana/db"
 	"hana/utils"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 	"time"
-)
-
-const (
-	checkSystemUser       string = `SELECT USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE USER_NAME = 'SYSTEM'`
-	checkPasswordLifetime string = `SELECT	USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
-)
-
-var (
-	AllChecks        []*Check
-	PREDEFINED_USERS = []string{"SYSTEM", "SYS", "_SYS_AFL", "_SYS_EPM", "_SYS_REPO", "_SYS_SQL_ANALYZER", "_SYS_STATISTICS", "_SYS_TASK", "_SYS_WORKLOAD_REPLAY", "_SYS_XB", "_SYS_TABLE_REPLICAS", "SYS_TABLE_REPLICA_DATA"}
 )
 
 type Check struct {
@@ -27,11 +18,12 @@ type Check struct {
 	Recommendation string
 	Query          string
 	Results        db.Results
+	Parameters     []string
 	Result         bool
 }
 
-func (check *Check) ExecuteQuery() {
-	res := db.Query(check.Query)
+func executeQuery(query string) (results db.Results) {
+	res := db.Query(query)
 	// Do something with the map
 	for _, r := range res {
 		var resMap = make(map[string]interface{})
@@ -53,13 +45,26 @@ func (check *Check) ExecuteQuery() {
 			//fmt.Println("Key:", key, "Val:", val, "Value Type:", reflect.TypeOf(val))
 			resMap[key] = val
 		}
-		check.Results = append(check.Results, resMap)
+		results = append(results, resMap)
+	}
+	return
+}
+
+func prepareAndExecute(check *Check) {
+	for _, p := range check.Parameters {
+		stmt := fmt.Sprintf(check.Query, p)
+		//fmt.Println(stmt)
+		executeQuery(stmt)
 	}
 }
 
 func ExecuteQueries() {
 	for _, check := range AllChecks {
-		check.ExecuteQuery()
+		if len(check.Parameters) == 0 {
+			check.Results = executeQuery(check.Query)
+		} else {
+			prepareAndExecute(check)
+		}
 	}
 }
 
@@ -70,7 +75,7 @@ func EvaluateResults() {
 		case "CheckSystemUser":
 			if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
 				utils.Ok(
-					"[✔] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
+					"[+] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
 					check.Results[0]["USER_DEACTIVATED"],
 				)
 				utils.Info(
@@ -80,7 +85,7 @@ func EvaluateResults() {
 				)
 			} else {
 				utils.Error(
-					"[✘] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
+					"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
 					check.Results[0]["USER_DEACTIVATED"],
 				)
 				utils.Info(
@@ -88,10 +93,9 @@ func EvaluateResults() {
 					check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
 				)
 			}
-			break
 		case "CheckPasswordLifetime":
 			var users []map[string]interface{}
-			utils.Error("[✘] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n")
+			utils.Error("[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n")
 			for _, r := range check.Results {
 				user := r["USER_NAME"].(string)
 				if (isPredefined(user) && strings.HasPrefix(user, "_SYS_")) || strings.HasPrefix(user, "XSSQLCC_AUTO_USER_") {
@@ -102,9 +106,39 @@ func EvaluateResults() {
 			for _, u := range users {
 				fmt.Println("  -", u["USER_NAME"].(string))
 			}
-			break
+		case "SystemPrivileges":
+			grantees := make(map[string]entity)
+			privileges := make(map[string][]entity)
+			utils.Error("[!] Please review the following entities (users/roles) because they might have too high privileges:\n")
+			utils.Info("[I] Breakdown per grantee\n")
+			//fmt.Println(check.Results)
+			for _, r := range check.Results {
+				user := r["GRANTEE"].(string)
+				grantees[user] = entity{
+					Type:       r["GRANTEE_TYPE"].(string),
+					Name:       user,
+					Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+				}
+			}
+			for k, grantee := range grantees {
+				fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+				for _, p := range grantee.Privileges {
+					fmt.Println("    - ", p)
+				}
+				for _, p := range grantee.Privileges {
+					privileges[p] = append(privileges[p], grantee)
+				}
+			}
+			utils.Info("[I] Breakdown per privilege\n")
+			for privilege, entities := range privileges {
+				fmt.Printf("  - %s\n", privilege)
+				for _, entity := range entities {
+					fmt.Printf("    - %s (type: %s)\n", entity.Name, entity.Type)
+				}
+			}
 		default:
-			break
+			utils.Error("Unknown check name %s\n", check.Name)
+			os.Exit(1)
 		}
 		fmt.Println("-----------")
 		/* for _, r := range check.Results {
@@ -116,7 +150,7 @@ func EvaluateResults() {
 
 }
 
-func newCheck(name, description, link, recommendation, query string) *Check {
+func newCheck(name, description, link, recommendation, query string, parameters []string) *Check {
 	if name == "" || query == "" {
 		log.Fatalf("Query creation failed. Name and Query fields required.")
 	}
@@ -126,6 +160,7 @@ func newCheck(name, description, link, recommendation, query string) *Check {
 		Link:           link,
 		Recommendation: recommendation,
 		Query:          query,
+		Parameters:     parameters,
 		Results:        db.Results{},
 		Result:         false,
 	}
@@ -143,6 +178,7 @@ func init() {
 		link,
 		recommendation,
 		checkSystemUser,
+		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 	name = "CheckPasswordLifetime"
@@ -155,6 +191,23 @@ func init() {
 		link,
 		recommendation,
 		checkPasswordLifetime,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "SystemPrivileges"
+	description = "System privileges authorize database-wide administration commands. The users SYSTEM and _SYS_REPO have all these privileges by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privileges"
+	recommendation = "System privileges should only ever be granted to users that actually need them. In addition, several system privileges grant powerful permissions, for example, the ability to delete data and to view data unfiltered and should be granted with extra care."
+	p := "'" + strings.Join(ADMIN_PRIVILEGES, "', '") + "'"
+	stmt := fmt.Sprintf(systemPrivileges, p)
+	fmt.Println(stmt)
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		stmt,
+		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 }
