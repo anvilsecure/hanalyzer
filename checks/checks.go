@@ -185,7 +185,7 @@ func EvaluateResults() {
 			} else {
 				utils.Ok("[+] No user/role has %s privilege.\n", check.Parameters[0])
 			}
-		case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport":
+		case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport", "PredefinedCatalogRepositoryRoles":
 			if len(check.Results) > 0 {
 				utils.Error("[!] The following users/roles have %s role:\n", check.Parameters[0])
 				grantees := make(map[string]entity)
@@ -354,15 +354,29 @@ func init() {
 	))
 	//////////////////////////////////////////////////////////////////////////////
 	name = "PredefinedCatalogRoleSAPSupport"
-	description = "The role MODELING contains the predefined analytic privilege _SYS_BI_CP_ALL, which potentially allows a user to access all the data in activated views that are protected by XML-based analytic privileges, regardless of any other XML-based analytic privileges that apply. The user SYSTEM has the role MODELING by default."
-	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-modeling"
-	recommendation = "Do not grant this role to users, particularly in production databases. It should be used as a role template only."
+	description = "The role SAP_INTERNAL_HANA_SUPPORT contains system privileges and object privileges that allow access to certain low-level internal system views needed by SAP HANA development support in support situations. No user has the role SAP_INTERNAL_HANA_SUPPORT by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-sap_internal_hana_support"
+	recommendation = "This role should only be granted to SAP HANA development support users for their support activities."
 	AllChecks = append(AllChecks, newCheck(
 		name,
 		description,
 		link,
 		recommendation,
-		predefinedCatalogRoleSAPSupport,
+		predefinedCatalogRoleGeneral,
 		[]string{"SAP_INTERNAL_HANA_SUPPORT"},
 	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "PredefinedCatalogRepositoryRoles"
+	description = "SAP HANA is delivered with a set of preinstalled software components implemented as SAP HANA Web applications, libraries, and configuration data. The privileges required to use these components are contained within repository roles delivered with the component itself. The standard user _SYS_REPO automatically has all of these roles. Some may also be granted automatically to the standard user SYSTEM to enable tools such as the SAP HANA cockpit to be used immediately after installation."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-repository-roles"
+	recommendation = "As repository roles can change when a new version of the package is deployed, either do not use them directly but instead as a template for creating your own roles, or have a regular review process in place to verify that they still contain only privileges that are in line with your organization's security policy. Furthermore, if repository package privileges are granted by a role, we recommend that these privileges be restricted to your organization's packages rather than the complete repository. Therefore, for each package privilege (REPO.*) that occurs in a role template and is granted on .REPO_PACKAGE_ROOT, check whether the privilege can and should be granted to a single package or a small number of specific packages rather than the full repository."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		predefinedCatalogRoleGeneral,
+		[]string{"sap.hana.xs.admin.roles::HTTPDestAdministrator"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
 }

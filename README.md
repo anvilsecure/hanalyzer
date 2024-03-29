@@ -72,4 +72,4 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] System Privileges
 - [x] Predefined Catalog Role MODELING
 - [x] Predefined Catalog Role SAP_INTERNAL_HANA_SUPPORT
-- [ ] Predefined Repository Roles
+- [x] Predefined Repository Roles
