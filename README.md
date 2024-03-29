@@ -64,7 +64,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Analytic Privilege: _SYS_BI_CP_ALL
 - [x] Debug privileges
 - [x] Predefined Catalog Role CONTENT_ADMIN
-- [ ] User Parameter CLIENT
+- [x] User Parameter CLIENT
 - [ ] OS file permissions
 - [ ] Audit configuration
 

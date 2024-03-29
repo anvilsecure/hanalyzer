@@ -3,9 +3,63 @@ package checks
 import (
 	"fmt"
 	"hana/db"
+	"hana/utils"
 	"log"
+	"os"
+	"reflect"
+	"time"
 )
 
+func executeQuery(query string) (results db.Results) {
+	res := db.Query(query)
+	// Do something with the map
+	for _, r := range res {
+		var resMap = make(map[string]interface{})
+		for key, val := range r {
+			switch t := val.(type) {
+			case []uint8:
+				val = string(val.([]uint8))
+			case bool:
+				val = val.(bool)
+			case time.Time:
+				_ = t
+				x := val.(time.Time)
+				val = fmt.Sprint(x.Format("2006-01-02 15:04:05"))
+			default:
+				if rv := reflect.ValueOf(val); !rv.IsValid() || rv.IsNil() {
+					val = "NULL"
+				}
+			}
+			//fmt.Println("Key:", key, "Val:", val, "Value Type:", reflect.TypeOf(val))
+			resMap[key] = val
+		}
+		results = append(results, resMap)
+	}
+	return
+}
+
+func prepareAndExecute(check *Check) {
+	if len(check.Parameters) > 1 {
+		utils.Error("We aren't ready yet to prepare statements w/ mutiple parameters :[")
+		os.Exit(1)
+	}
+	var res db.Results
+	for _, p := range check.Parameters {
+		stmt := fmt.Sprintf(check.Query, p)
+		res = executeQuery(stmt)
+	}
+	check.Results = res
+}
+
+func ExecuteQueries() {
+	for _, check := range CheckList {
+		if len(check.Parameters) == 0 {
+			check.Results = executeQuery(check.Query)
+		} else {
+			prepareAndExecute(check)
+		}
+	}
+}
 func newCheck(name, description, link, recommendation, query string, parameters []string) *Check {
 	if name == "" || query == "" {
 		log.Fatalf("Query creation failed. Name and Query fields required.")
@@ -96,4 +150,13 @@ func printGrantees(grantees map[string]entity) {
 	for k, grantee := range grantees {
 		fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
 	}
+}
+
+func getCheckByName(name string) (*Check, error) {
+	for _, c := range CheckList {
+		if c.Name == name {
+			return c, nil
+		}
+	}
+	return nil, fmt.Errorf("no check found with name %s", name)
 }

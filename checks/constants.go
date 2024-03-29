@@ -1,5 +1,24 @@
 package checks
 
+import "hana/db"
+
+type Check struct {
+	Name           string
+	Description    string
+	Link           string
+	Recommendation string
+	Query          string
+	Results        db.Results
+	Parameters     []string
+	Result         bool
+}
+
+type entity struct {
+	Type       string
+	Name       string
+	Privileges []string
+}
+
 const (
 	checkSystemUser              string = `SELECT USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE USER_NAME = 'SYSTEM'`
 	checkPasswordLifetime        string = `SELECT	USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
@@ -10,10 +29,12 @@ const (
 	debugPrivilege               string = `SELECT * FROM GRANTED_PRIVILEGES WHERE PRIVILEGE='%s' OR PRIVILEGE='ATTACH DEBUGGER';`
 	predefinedCatalogRole        string = `SELECT * FROM GRANTED_ROLES WHERE ROLE_NAME = '%s' AND GRANTEE NOT IN ('SYSTEM');`
 	predefinedCatalogRoleGeneral string = `SELECT * FROM EFFECTIVE_ROLE_GRANTEES WHERE ROLE_NAME = '%s';`
+	userParameterClient_0        string = `SELECT * FROM "M_INIFILE_CONTENTS" WHERE KEY='secure_client_parameter';`
+	userParameterClient_1        string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = 'CLIENT PARAMETER ADMIN';`
 )
 
 var (
-	AllChecks        []*Check
+	CheckList        []*Check
 	userNames        []string
 	PREDEFINED_USERS = []string{"SYSTEM", "SYS", "_SYS_AFL", "_SYS_EPM", "_SYS_REPO", "_SYS_SQL_ANALYZER", "_SYS_STATISTICS", "_SYS_TASK", "_SYS_WORKLOAD_REPLAY", "_SYS_XB", "_SYS_TABLE_REPLICAS", "SYS_TABLE_REPLICA_DATA"}
 	ADMIN_PRIVILEGES = []string{"CATALOG READ", "TRACE ADMIN", "ADAPTER ADMIN", "AGENT ADMIN", "AUDIT ADMIN", "AUDIT OPERATOR", "BACKUP ADMIN", "BACKUP OPERATOR", "CERTIFICATE ADMIN", "CREATE REMOTE SOURCE", "CREDENTIAL ADMIN", "ENCRYPTION ROOT KEY ADMIN", "EXTENDED STORAGE ADMIN", "INIFILE ADMIN", "LDAP ADMIN", "LICENSE ADMIN", "LOG ADMIN", "MONITOR ADMIN", "OPTIMIZER ADMIN", "RESOURCE ADMIN", "SAVEPOINT ADMIN", "SERVICE ADMIN", "SESSION ADMIN", "SSL ADMIN", "TABLE ADMIN", "TRUST ADMIN", "VERSION ADMIN", "WORKLOAD ADMIN", "WORKLOAD ANALYZE ADMIN", "WORKLOAD CAPTURE ADMIN", "WORKLOAD REPLAY ADMIN"}
@@ -25,9 +46,3 @@ var (
 		{"CREATE STRUCTURED PRIVILEGE", "STRUCTUREDPRIVILEGE ADMIN"},
 	}
 )
-
-type entity struct {
-	Type       string
-	Name       string
-	Privileges []string
-}

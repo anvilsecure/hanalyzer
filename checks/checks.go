@@ -2,78 +2,17 @@ package checks
 
 import (
 	"fmt"
-	"hana/db"
 	"hana/utils"
+	"log"
 	"os"
-	"reflect"
 	"strings"
-	"time"
 )
 
-type Check struct {
-	Name           string
-	Description    string
-	Link           string
-	Recommendation string
-	Query          string
-	Results        db.Results
-	Parameters     []string
-	Result         bool
-}
-
-func executeQuery(query string) (results db.Results) {
-	res := db.Query(query)
-	// Do something with the map
-	for _, r := range res {
-		var resMap = make(map[string]interface{})
-		for key, val := range r {
-			switch t := val.(type) {
-			case []uint8:
-				val = string(val.([]uint8))
-			case bool:
-				val = val.(bool)
-			case time.Time:
-				_ = t
-				x := val.(time.Time)
-				val = fmt.Sprint(x.Format("2006-01-02 15:04:05"))
-			default:
-				if rv := reflect.ValueOf(val); !rv.IsValid() || rv.IsNil() {
-					val = "NULL"
-				}
-			}
-			//fmt.Println("Key:", key, "Val:", val, "Value Type:", reflect.TypeOf(val))
-			resMap[key] = val
-		}
-		results = append(results, resMap)
-	}
-	return
-}
-
-func prepareAndExecute(check *Check) {
-	if len(check.Parameters) > 1 {
-		utils.Error("We aren't ready yet to prepare statements w/ mutiple parameters :[")
-		os.Exit(1)
-	}
-	var res db.Results
-	for _, p := range check.Parameters {
-		stmt := fmt.Sprintf(check.Query, p)
-		res = executeQuery(stmt)
-	}
-	check.Results = res
-}
-
-func ExecuteQueries() {
-	for _, check := range AllChecks {
-		if len(check.Parameters) == 0 {
-			check.Results = executeQuery(check.Query)
-		} else {
-			prepareAndExecute(check)
-		}
-	}
-}
-
 func EvaluateResults() {
-	for _, check := range AllChecks {
+	for _, check := range CheckList {
+		if check.Name == "UserParameterClient_0" {
+			continue
+		}
 		utils.Warning("Check: %s\n", check.Name)
 		switch check.Name {
 		case "CheckSystemUser":
@@ -201,6 +140,30 @@ func EvaluateResults() {
 			} else {
 				utils.Ok("[+] No user/role has %s role.\n", check.Parameters[0])
 			}
+		case "UserParameterClient":
+			preliminaryCheck, err := getCheckByName("UserParameterClient_0")
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			if len(preliminaryCheck.Results) == 0 {
+				utils.Ok("[+] secure_client_parameter in [authorization] section in global.ini is not set.\n")
+			} else {
+				value := preliminaryCheck.Results[0]["VALUE"].(string)
+				if value == "true" {
+					utils.Ok("[!] secure_client_parameter in [authorization] section in global.ini is set to true.\n")
+				} else {
+					utils.Error("[!] secure_client_parameter in [authorization] section in global.ini is set to false\n")
+				}
+			}
+			if len(check.Results) > 0 {
+				utils.Error("[!] Please review the following entities (users/roles) because they can change CLIENT user parameter:\n")
+				for _, r := range check.Results {
+					fmt.Printf("  - %s (type: %s)\n", r["GRANTEE"], r["GRANTEE_TYPE"])
+				}
+			} else {
+				utils.Ok("[+] No user/role can change the CLIENT user parameter.\n")
+			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -222,7 +185,7 @@ func init() {
 	description := "The database user SYSTEM is the most powerful database user with irrevocable system privileges. The SYSTEM user is active after database creation."
 	link := "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#system-user"
 	recommendation := "Use SYSTEM to create database users with the minimum privilege set required for their duties (for example, user administration, system administration). Then deactivate SYSTEM."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -235,7 +198,7 @@ func init() {
 	description = "With the exception of internal technical users (_SYS_* users), the default password policy limits the lifetime of user passwords to 182 days (6 months)."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#password-lifetime-of-database-users"
 	recommendation = "Do not disable the password lifetime check for database users that correspond to real people."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -250,7 +213,7 @@ func init() {
 	recommendation = "System privileges should only ever be granted to users that actually need them. In addition, several system privileges grant powerful permissions, for example, the ability to delete data and to view data unfiltered and should be granted with extra care."
 	p := "'" + strings.Join(ADMIN_PRIVILEGES, "', '") + "'"
 	stmt := fmt.Sprintf(systemPrivileges, p)
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -266,7 +229,7 @@ func init() {
 	p = "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
 	stmt = fmt.Sprintf(criticalCombinations, p)
 	//fmt.Println(stmt)
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -279,7 +242,7 @@ func init() {
 	description = "The system privilege DATA ADMIN is a powerful privilege. It authorizes a user to execute all data definition language (DDL) commands in the SAP HANA database. Only the users SYSTEM and _SYS_REPO have this privilege by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privilege%3A-data-admin"
 	recommendation = "No user or role in a production database should have this privilege."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -292,7 +255,7 @@ func init() {
 	description = "The system privilege DEVELOPMENT authorizes some internal ALTER SYSTEM commands. By default, only the users SYSTEM and _SYS_REPO have this privilege."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privilege%3A-development"
 	recommendation = "No user or role in a production database should have this privilege."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -305,7 +268,7 @@ func init() {
 	description = "The predefined analytic privilege _SYS_BI_CP_ALL potentially allows a user to access all the data in activated views that are protected by XML-based analytic privileges, regardless of any other XML-based analytic privileges that apply. Only the predefined roles CONTENT ADMIN and MODELING have the analytic privilege _SYS_BI_CP_ALL by default. By default, only the user SYSTEM has these roles."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#analytic-privilege%3A-_sys_bi_cp_all"
 	recommendation = "Do not grant this privilege to any user or role in a production database."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -318,7 +281,7 @@ func init() {
 	description = "No user has debug privileges"
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#debug-privileges"
 	recommendation = "The privileges DEBUG and ATTACH DEBUGGER should not be assigned to any user for any object in production systems."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -331,7 +294,7 @@ func init() {
 	description = "The role CONTENT_ADMIN contains all privileges required for working with information models in the repository of the SAP HANA database. The user SYSTEM has the role CONTENT_ADMIN by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#predefined-catalog-role-content_admin"
 	recommendation = "Only the database user used to perform system updates should have the role CONTENT_ADMIN. Otherwise do not grant this role to users, particularly in production databases. It should be used as a role template only."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -344,7 +307,7 @@ func init() {
 	description = "The role MODELING contains the predefined analytic privilege _SYS_BI_CP_ALL, which potentially allows a user to access all the data in activated views that are protected by XML-based analytic privileges, regardless of any other XML-based analytic privileges that apply. The user SYSTEM has the role MODELING by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-modeling"
 	recommendation = "Do not grant this role to users, particularly in production databases. It should be used as a role template only."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -357,7 +320,7 @@ func init() {
 	description = "The role SAP_INTERNAL_HANA_SUPPORT contains system privileges and object privileges that allow access to certain low-level internal system views needed by SAP HANA development support in support situations. No user has the role SAP_INTERNAL_HANA_SUPPORT by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-sap_internal_hana_support"
 	recommendation = "This role should only be granted to SAP HANA development support users for their support activities."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
@@ -370,13 +333,39 @@ func init() {
 	description = "SAP HANA is delivered with a set of preinstalled software components implemented as SAP HANA Web applications, libraries, and configuration data. The privileges required to use these components are contained within repository roles delivered with the component itself. The standard user _SYS_REPO automatically has all of these roles. Some may also be granted automatically to the standard user SYSTEM to enable tools such as the SAP HANA cockpit to be used immediately after installation."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-repository-roles"
 	recommendation = "As repository roles can change when a new version of the package is deployed, either do not use them directly but instead as a template for creating your own roles, or have a regular review process in place to verify that they still contain only privileges that are in line with your organization's security policy. Furthermore, if repository package privileges are granted by a role, we recommend that these privileges be restricted to your organization's packages rather than the complete repository. Therefore, for each package privilege (REPO.*) that occurs in a role template and is granted on .REPO_PACKAGE_ROOT, check whether the privilege can and should be granted to a single package or a small number of specific packages rather than the full repository."
-	AllChecks = append(AllChecks, newCheck(
+	CheckList = append(CheckList, newCheck(
 		name,
 		description,
 		link,
 		recommendation,
 		predefinedCatalogRoleGeneral,
 		[]string{"sap.hana.xs.admin.roles::HTTPDestAdministrator"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "UserParameterClient_0"
+	description = "this check is only performed to support UserParameterClient_1"
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#user-parameter-client"
+	recommendation = "Prevent named users from changing the CLIENT user parameter themselves but allow technical users to do so in their sessions and/or queries."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		userParameterClient_0,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "UserParameterClient"
+	description = "	The CLIENT user parameter can be used to authorize named users in SAP HANA. Only a user with the USER ADMIN system privilege can change the value of the CLIENT parameter already assigned to other users. However, at runtime, any user can assign an arbitrary value to the CLIENT parameter either by setting the corresponding session variable or passing the parameter via placeholder in a query. While this is the desired behavior for technical users that work with multiple clients such as SAP Business Warehouse, S/4 HANA, or SAP Business Suite, it is problematic in named user scenarios if the CLIENT parameter is used to authorize access to data and not only to perform data filtering."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#user-parameter-client"
+	recommendation = "Prevent named users from changing the CLIENT user parameter themselves but allow technical users to do so in their sessions and/or queries."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		userParameterClient_1,
+		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 }
