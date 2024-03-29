@@ -58,7 +58,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 
 ## SAP HANA Database Checklists and Recommendations
 
-### Recommendations for Database Users, Roles, and Privileges
+### [Recommendations for Database Users, Roles, and Privileges](https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#password-lifetime-of-database-users)
 - [x] SYSTEM User (porting from @gvb)
 - [x] Password Lifetime of Database Users (porting from @gvb)
 - [x] System Privileges
