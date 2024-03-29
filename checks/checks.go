@@ -202,6 +202,8 @@ func EvaluateResults() {
 			fmt.Println("  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]")
 			fmt.Println("  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]")
 			fmt.Println("  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]")
+		case "Auditing":
+
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -429,6 +431,19 @@ func init() {
 		link,
 		recommendation,
 		osFsPermissions,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "Auditing"
+	description = "Auditing is disabled by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#auditing"
+	recommendation = "Verify whether auditing is required by your security concept, for example to fulfill specific compliance and regulatory requirements."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		auditing,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////

@@ -54,22 +54,55 @@ Before setup startup the host and let it start all the processes, otherwise it c
 
 **!! VMs expose port 39015**
 
-## Roadmap
-### Porting from @gvb
-- [x] SYSTEM User
-- [x] Password Lifetime of Database Users
-- [x] System Privileges: Critical Combinations
-- [x] System Privilege: DATA ADMIN
-- [x] System Privilege: DEVELOPMENT
-- [x] Analytic Privilege: _SYS_BI_CP_ALL
-- [x] Debug privileges
-- [x] Predefined Catalog Role CONTENT_ADMIN
-- [x] User Parameter CLIENT
-- [x] OS file permissions
-- [ ] Audit configuration
+# Roadmap
 
-### Other checks
+## SAP HANA Database Checklists and Recommendations
+
+### Recommendations for Database Users, Roles, and Privileges
+- [x] SYSTEM User (porting from @gvb)
+- [x] Password Lifetime of Database Users (porting from @gvb)
 - [x] System Privileges
+- [x] System Privileges: Critical Combinations (porting from @gvb)
+- [x] System Privilege: DATA ADMIN (porting from @gvb)
+- [x] System Privilege: DEVELOPMENT (porting from @gvb)
+- [x] Analytic Privilege: _SYS_BI_CP_ALL (porting from @gvb)
+- [x] Debug Privileges (porting from @gvb)
+- [x] Predefined Catalog Role CONTENT_ADMIN (porting from @gvb)
 - [x] Predefined Catalog Role MODELING
 - [x] Predefined Catalog Role SAP_INTERNAL_HANA_SUPPORT
 - [x] Predefined Repository Roles
+- [x] User Parameter CLIENT (porting from @gvb)
+- [x] Related Information
+
+### Recommendations for File System and Operating System
+- [x] Operating System Users (add as caveat manual check)
+- [x] OS File System Permissions (porting from @gvb)
+- [x] OS Security Patches (add as caveat manual check)
+- [x] OS sudo Configuration (add as caveat manual check)
+
+### Recommendations for Auditing Configuration
+- [ ] Auditing (porting from @gvb)
+- [ ] Audit Trail Target: syslog
+- [ ] Audit Trail Target: CSV Text File
+
+### Recommendations for Network Configuration
+- [ ] Open Ports
+- [ ] Internal Host Name Resolution in Single-Host System
+- [ ] Internal Host Name Resolution in Multiple-Host System
+- [ ] Host Name Resolution in System Replication
+
+### Recommendations for Data Encryption
+- [ ] Instance SSFS Master Key
+- [ ] System PKI SSFS Master Key
+- [ ] Root Encryption Keys
+- [ ] Encryption Key of the SAP HANA Secure User Store (hdbuserstore)
+- [ ] Data and Log Volume Encryption
+
+### Recommendations for Trace and Dump Files
+- [ ] Trace Files
+- [ ] Dump Files
+
+### Recommendations for Tenant Database Management
+- [ ] SAML-Based User Authentication
+- [ ] Configuration Blacklist
+- [ ] Restricted Features
