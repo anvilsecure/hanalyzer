@@ -203,7 +203,51 @@ func EvaluateResults() {
 			fmt.Println("  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]")
 			fmt.Println("  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]")
 		case "Auditing":
-
+			preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			if len(check.Results) == 0 || (len(check.Results) > 0 && check.Results[0]["COUNT"].(int64) == 0) {
+				utils.Error("[!] Auditing disabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, is not set or FALSE.\n")
+			} else {
+				utils.Ok("[+] Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %s \n", check.Results[0]["COUNT"].(int64))
+				utils.Info("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
+			}
+		case "AuditingCSV":
+			preAuditingCSV, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			if len(check.Results) == 0 && len(preAuditingCSV.Results) == 0 {
+				utils.Error("[!] The audit trail target CSV file (CSVTEXTFILE) is not configured.\n")
+			} else {
+				utils.Ok("[+] Auditing of CSV files is enabled. The following policies have been detected:\n")
+				if len(preAuditingCSV.Results) > 0 {
+					for _, r := range preAuditingCSV.Results {
+						fmt.Printf(
+							"  - File: %s, Section: %s, Key: %s, Value: %s\n",
+							r["FILE_NAME"].(string),
+							r["SECTION"].(string),
+							r["KEY"].(string),
+							r["VALUE"].(string),
+						)
+					}
+				}
+				if len(check.Results) > 0 {
+					for _, r := range check.Results {
+						fmt.Printf(
+							"  - Audit policy name: %s (active: %s), User name: %s\n",
+							r["AUDIT_POLICY_NAME"].(string),
+							r["IS_AUDIT_POLICY_ACTIVE"].(string),
+							r["USER_NAME"].(string),
+						)
+					}
+				}
+			}
+			utils.Warning("CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n")
+			fmt.Println("  - The default audit trail target is syslog (SYSLOGPROTOCOL) for the system database. If you are using syslog, ensure that it is installed and configured according to your requirements (for example, for writing the audit trail to a remote server). [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-syslog]")
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -434,7 +478,7 @@ func init() {
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
-	name = "Auditing"
+	name = "_pre_Auditing"
 	description = "Auditing is disabled by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#auditing"
 	recommendation = "Verify whether auditing is required by your security concept, for example to fulfill specific compliance and regulatory requirements."
@@ -443,7 +487,46 @@ func init() {
 		description,
 		link,
 		recommendation,
+		_pre_auditing,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "Auditing"
+	description = "Number of auditing policies if auditing is enabled"
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#auditing"
+	recommendation = "Verify whether auditing is required by your security concept, for example to fulfill specific compliance and regulatory requirements."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
 		auditing,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "_pre_AuditingCSV"
+	description = "preparation query"
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-csv-text-file"
+	recommendation = "Do not configure CSV text file (CSVTEXTFILE) as an audit trail target in a production system as it has severe restrictions."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		_pre_auditingCSV,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "AuditingCSV"
+	description = "The audit trail target CSV text file (CSVTEXTFILE) is not configured by default"
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-csv-text-file"
+	recommendation = "Do not configure CSV text file (CSVTEXTFILE) as an audit trail target in a production system as it has severe restrictions."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		auditingCSV,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////

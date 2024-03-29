@@ -81,9 +81,9 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] OS sudo Configuration (add as caveat manual check)
 
 ### Recommendations for Auditing Configuration
-- [ ] Auditing (porting from @gvb)
-- [ ] Audit Trail Target: syslog
-- [ ] Audit Trail Target: CSV Text File
+- [x] Auditing (porting from @gvb)
+- [x] Audit Trail Target: syslog (add as caveat manual check)
+- [x] Audit Trail Target: CSV Text File
 
 ### Recommendations for Network Configuration
 - [ ] Open Ports

@@ -21,6 +21,8 @@ func executeQuery(query string) (results db.Results) {
 				val = string(val.([]uint8))
 			case bool:
 				val = val.(bool)
+			case int64:
+				val = val.(int64)
 			case time.Time:
 				_ = t
 				x := val.(time.Time)

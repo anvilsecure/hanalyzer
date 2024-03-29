@@ -33,7 +33,10 @@ const (
 	userParameterClient          string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = 'CLIENT PARAMETER ADMIN';`
 	_pre_osFsPermissions         string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'import_export' AND KEY = 'file_security';`
 	osFsPermissions              string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE (OBJECT_TYPE = 'SYSTEMPRIVILEGE') AND (PRIVILEGE = 'EXPORT' OR PRIVILEGE='IMPORT');`
-	auditing                     string = `SELECT VALUE FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' AND KEY = 'global_auditing_state'`
+	_pre_auditing                string = `SELECT VALUE FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' AND KEY = 'global_auditing_state'`
+	auditing                     string = `SELECT COUNT(*) as COUNT FROM "PUBLIC"."AUDIT_POLICIES"`
+	_pre_auditingCSV             string = `SELECT * FROM "PUBLIC" . "M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' --AND VALUE = 'CSVTEXTFILE';`
+	auditingCSV                  string = `SELECT * FROM "PUBLIC"."AUDIT_POLICIES" WHERE TRAIL_TYPE='CSV';`
 )
 
 var (
