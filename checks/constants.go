@@ -20,23 +20,28 @@ type entity struct {
 }
 
 const (
-	checkSystemUser              string = `SELECT USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE USER_NAME = 'SYSTEM'`
-	checkPasswordLifetime        string = `SELECT	USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
-	systemPrivileges             string = `SELECT DISTINCT GRANTEE, GRANTEE_TYPE, PRIVILEGE FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE IN (%s) AND GRANTEE NOT IN ('SYSTEM', '_SYS_REPO') AND GRANTEE NOT IN ('SYSTEM', '_SYS_REPO')`
-	criticalCombinations         string = `SELECT DISTINCT USER_NAME, PRIVILEGE FROM "PUBLIC"."EFFECTIVE_PRIVILEGES" WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND (%s)`
-	dataAdmin                    string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = '%s' AND GRANTEE NOT IN ('SYSTEM','_SYS_REPO');`
-	analyticPrivilege            string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'ANALYTICALPRIVILEGE' AND OBJECT_NAME = '%s' AND PRIVILEGE = 'EXECUTE' AND GRANTEE NOT IN ('SYSTEM','MODELING', 'CONTENT_ADMIN');`
-	debugPrivilege               string = `SELECT * FROM GRANTED_PRIVILEGES WHERE PRIVILEGE='%s' OR PRIVILEGE='ATTACH DEBUGGER';`
-	predefinedCatalogRole        string = `SELECT * FROM GRANTED_ROLES WHERE ROLE_NAME = '%s' AND GRANTEE NOT IN ('SYSTEM');`
-	predefinedCatalogRoleGeneral string = `SELECT * FROM EFFECTIVE_ROLE_GRANTEES WHERE ROLE_NAME = '%s';`
-	_pre_userParameterClient     string = `SELECT * FROM "M_INIFILE_CONTENTS" WHERE KEY='secure_client_parameter';`
-	userParameterClient          string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = 'CLIENT PARAMETER ADMIN';`
-	_pre_osFsPermissions         string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'import_export' AND KEY = 'file_security';`
-	osFsPermissions              string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE (OBJECT_TYPE = 'SYSTEMPRIVILEGE') AND (PRIVILEGE = 'EXPORT' OR PRIVILEGE='IMPORT');`
-	_pre_auditing                string = `SELECT VALUE FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' AND KEY = 'global_auditing_state'`
-	auditing                     string = `SELECT COUNT(*) as COUNT FROM "PUBLIC"."AUDIT_POLICIES"`
-	_pre_auditingCSV             string = `SELECT * FROM "PUBLIC" . "M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' --AND VALUE = 'CSVTEXTFILE';`
-	auditingCSV                  string = `SELECT * FROM "PUBLIC"."AUDIT_POLICIES" WHERE TRAIL_TYPE='CSV';`
+	checkSystemUser                      string = `SELECT USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE USER_NAME = 'SYSTEM'`
+	checkPasswordLifetime                string = `SELECT	USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
+	systemPrivileges                     string = `SELECT DISTINCT GRANTEE, GRANTEE_TYPE, PRIVILEGE FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE IN (%s) AND GRANTEE NOT IN ('SYSTEM', '_SYS_REPO') AND GRANTEE NOT IN ('SYSTEM', '_SYS_REPO')`
+	criticalCombinations                 string = `SELECT DISTINCT USER_NAME, PRIVILEGE FROM "PUBLIC"."EFFECTIVE_PRIVILEGES" WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND (%s)`
+	dataAdmin                            string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = '%s' AND GRANTEE NOT IN ('SYSTEM','_SYS_REPO');`
+	analyticPrivilege                    string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'ANALYTICALPRIVILEGE' AND OBJECT_NAME = '%s' AND PRIVILEGE = 'EXECUTE' AND GRANTEE NOT IN ('SYSTEM','MODELING', 'CONTENT_ADMIN');`
+	debugPrivilege                       string = `SELECT * FROM GRANTED_PRIVILEGES WHERE PRIVILEGE='%s' OR PRIVILEGE='ATTACH DEBUGGER';`
+	predefinedCatalogRole                string = `SELECT * FROM GRANTED_ROLES WHERE ROLE_NAME = '%s' AND GRANTEE NOT IN ('SYSTEM');`
+	predefinedCatalogRoleGeneral         string = `SELECT * FROM EFFECTIVE_ROLE_GRANTEES WHERE ROLE_NAME = '%s';`
+	_pre_userParameterClient             string = `SELECT * FROM "M_INIFILE_CONTENTS" WHERE KEY='secure_client_parameter';`
+	userParameterClient                  string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = 'CLIENT PARAMETER ADMIN';`
+	_pre_osFsPermissions                 string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'import_export' AND KEY = 'file_security';`
+	osFsPermissions                      string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE (OBJECT_TYPE = 'SYSTEMPRIVILEGE') AND (PRIVILEGE = 'EXPORT' OR PRIVILEGE='IMPORT');`
+	_pre_auditing                        string = `SELECT VALUE FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' AND KEY = 'global_auditing_state'`
+	auditing                             string = `SELECT COUNT(*) as COUNT FROM "PUBLIC"."AUDIT_POLICIES"`
+	_pre_auditingCSV                     string = `SELECT * FROM "PUBLIC" . "M_INIFILE_CONTENTS" WHERE SECTION = 'auditing configuration' --AND VALUE = 'CSVTEXTFILE';`
+	auditingCSV                          string = `SELECT * FROM "PUBLIC"."AUDIT_POLICIES" WHERE TRAIL_TYPE='CSV';`
+	internalHostnameResolutionSingle     string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'communication' AND KEY = 'listeninterface';`
+	internalHostnameResolutionMultiple   string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'internal_hostname_resolution';`
+	_pre_0_hostnameResolutionReplication string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'system_replication_communication' AND KEY = 'listeninterface';`
+	_pre_1_hostnameResolutionReplication string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'system_replication_communication' AND KEY = 'internal_hostname_resolution';`
+	hostnameResolutionReplication        string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'system_replication_communication' AND KEY = 'allowed_sender';`
 )
 
 var (

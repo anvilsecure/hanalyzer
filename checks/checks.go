@@ -248,6 +248,87 @@ func EvaluateResults() {
 			}
 			utils.Warning("CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n")
 			fmt.Println("  - The default audit trail target is syslog (SYSLOGPROTOCOL) for the system database. If you are using syslog, ensure that it is installed and configured according to your requirements (for example, for writing the audit trail to a remote server). [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-syslog]")
+		case "InternalHostnameResolutionSingle":
+			if len(check.Results) == 0 {
+				utils.Error("[!] In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.")
+			} else if len(check.Results) == 1 {
+				v := check.Results[0]["VALUE"].(string)
+				if v == ".local" {
+					utils.Ok("In global.ini files, the [communication] listeninterface is set to %s.\n", v)
+				} else {
+					utils.Error("In global.ini files, the [communication] listeninterface is set to %s.\n", v)
+					if v == ".global" {
+						utils.Warning("If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n")
+					}
+				}
+			}
+			utils.Info("Further information about possible values at: https://help.sap.com/docs/SAP_HANA_PLATFORM/6b94445c94ae495c83a19646e7c3fd56/3fd4912896284029931997903c75d956.html\n")
+		case "InternalHostnameResolutionMultiple":
+			internal, err := getCheckByName("InternalHostnameResolutionSingle")
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			if len(internal.Results) == 1 {
+				v := internal.Results[0]["VALUE"].(string)
+				if v == ".internal" {
+					if len(check.Results) > 0 {
+						utils.Warning("[-] The following hostname are set:\n")
+						for _, r := range check.Results {
+							fmt.Printf("  - %s -> %s\n", r["KEY"].(string), r["VALUE"].(string))
+						}
+					} else {
+						utils.Info("Even if the system is configured as multi host (listeninterface in [communication] section is %s) no hostname was found in [internal_hostname_resolution] section\n", v)
+					}
+				} else {
+					utils.Info("The system is not in multi host configuration, listeninterface value in [communication] section is %s\n", v)
+				}
+			}
+		case "HostnameResolutionReplication":
+			pre0, err := getCheckByName("_pre_0_HostnameResolutionReplication")
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			pre1, err := getCheckByName("_pre_1_HostnameResolutionReplication")
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			if len(pre0.Results) == 1 {
+				v := pre0.Results[0]["VALUE"].(string)
+				if v == ".global" {
+					if len(pre1.Results) > 0 {
+						utils.Warning("[-] The following hostname are set:\n")
+						for _, r := range pre1.Results {
+							fmt.Printf("  - %s -> %s\n", r["KEY"].(string), r["VALUE"].(string))
+						}
+					} else {
+						utils.Info("Even if the system is configured as multi host (listeninterface in [communication] section is %s) no hostname was found in [system_replication_communication] section\n", v)
+					}
+					if len(check.Results) == 0 {
+						utils.Error("[!] No restriction found in key allowed_sender in section [system_replication_communication].\n")
+					} else {
+						var allowList []string
+						for _, v := range check.Results {
+							allowList = append(allowList, v["VALUE"].(string))
+						}
+						if len(allowList) == 1 && allowList[0] == "" {
+							break
+						}
+						if len(allowList) > 0 {
+							utils.Info("Communication is restricted to the following hostnames:\n")
+							for _, h := range allowList {
+								if h == "" {
+									continue
+								}
+								fmt.Printf("  - %s\n", h)
+							}
+						}
+					}
+				}
+				utils.Warning("If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n")
+			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -527,6 +608,71 @@ func init() {
 		link,
 		recommendation,
 		auditingCSV,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "InternalHostnameResolutionSingle"
+	description = "SAP HANA services use IP addresses to communicate with each other. Host names are mapped to these IP addresses through internal host name resolution, a technique by which the use of specific and/or fast networks can be enforced and communication restricted to a specific network. In single-host systems, SAP HANA services listen on the loopback interface only (IP address 127.0.0.1). In global.ini files, the [communication] listeninterface is set to .local."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#internal-host-name-resolution-in-single-host-system"
+	recommendation = "Do not change the default setting."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		internalHostnameResolutionSingle,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "InternalHostnameResolutionMultiple"
+	description = "In a distributed scenario with multiple hosts, the network needs to be configured so that inter-service communication is operational throughout the entire landscape. The default configuration depends on how you installed your system."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#internal-host-name-resolution-in-multiple-host-system"
+	recommendation = "Multiple-host systems can run with or without a separate network definition for inter-service communication. The recommended setting depends accordingly. If a separate network is configured for internal communication, the parameter [communication] listeninterface should be set to .internal. If a separate network is not configured for internal communication, the parameter [communication] listeninterface should be set to .global."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		internalHostnameResolutionMultiple,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "_pre_0_HostnameResolutionReplication"
+	description = "preliminary query #1 for hostname resolution replication check"
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#host-name-resolution-in-system-replication"
+	recommendation = "The recommended setting depends on whether or not a separate network is defined for internal communication. If a separate internal network channel is configured for system replication, the parameter [system_replication_communication] listeninterface parameter should be .internal. If a separate network is not configured for system replication, the parameter [system_replication_communication] listeninterface should be set to .global."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		_pre_0_hostnameResolutionReplication,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "_pre_1_HostnameResolutionReplication"
+	description = "preliminary query #2 for hostname resolution replication check"
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#host-name-resolution-in-system-replication"
+	recommendation = "The recommended setting depends on whether or not a separate network is defined for internal communication. If a separate internal network channel is configured for system replication, the parameter [system_replication_communication] listeninterface parameter should be .internal. If a separate network is not configured for system replication, the parameter [system_replication_communication] listeninterface should be set to .global."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		_pre_1_hostnameResolutionReplication,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "HostnameResolutionReplication"
+	description = "The parameter [system_replication_communication] listeninterface parameter is set to .global."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#host-name-resolution-in-system-replication"
+	recommendation = "The recommended setting depends on whether or not a separate network is defined for internal communication. If a separate internal network channel is configured for system replication, the parameter [system_replication_communication] listeninterface parameter should be .internal. If a separate network is not configured for system replication, the parameter [system_replication_communication] listeninterface should be set to .global."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		hostnameResolutionReplication,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////

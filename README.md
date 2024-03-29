@@ -86,10 +86,10 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Audit Trail Target: CSV Text File
 
 ### Recommendations for Network Configuration
-- [ ] Open Ports
-- [ ] Internal Host Name Resolution in Single-Host System
-- [ ] Internal Host Name Resolution in Multiple-Host System
-- [ ] Host Name Resolution in System Replication
+- [x] Open Ports (add as caveat manual check)
+- [x] Internal Host Name Resolution in Single-Host System
+- [x] Internal Host Name Resolution in Multiple-Host System
+- [x] Host Name Resolution in System Replication
 
 ### Recommendations for Data Encryption
 - [ ] Instance SSFS Master Key
