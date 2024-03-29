@@ -10,7 +10,7 @@ import (
 
 func EvaluateResults() {
 	for _, check := range CheckList {
-		if check.Name == "UserParameterClient_0" {
+		if strings.HasPrefix(check.Name, "_pre_") {
 			continue
 		}
 		utils.Warning("Check: %s\n", check.Name)
@@ -141,15 +141,15 @@ func EvaluateResults() {
 				utils.Ok("[+] No user/role has %s role.\n", check.Parameters[0])
 			}
 		case "UserParameterClient":
-			preliminaryCheck, err := getCheckByName("UserParameterClient_0")
+			preCheckClient, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 			if err != nil {
 				log.Println(err.Error())
 				break
 			}
-			if len(preliminaryCheck.Results) == 0 {
+			if len(preCheckClient.Results) == 0 {
 				utils.Ok("[+] secure_client_parameter in [authorization] section in global.ini is not set.\n")
 			} else {
-				value := preliminaryCheck.Results[0]["VALUE"].(string)
+				value := preCheckClient.Results[0]["VALUE"].(string)
 				if value == "true" {
 					utils.Ok("[!] secure_client_parameter in [authorization] section in global.ini is set to true.\n")
 				} else {
@@ -163,6 +163,39 @@ func EvaluateResults() {
 				}
 			} else {
 				utils.Ok("[+] No user/role can change the CLIENT user parameter.\n")
+			}
+		case "OSFSPermissions":
+			preCheckOS, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			if len(preCheckOS.Results) == 0 {
+				utils.Error("[!] file_security in [import_export] section of indexserver.ini not set.\n")
+			} else {
+				value := preCheckOS.Results[0]["VALUE"].(string)
+				if value == "medium" || value == "high" {
+					utils.Ok("[+] file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
+				} else {
+					utils.Error("[!] file_security set to LOW value for import/export in indexserver.ini.\n")
+				}
+			}
+			if len(check.Results) > 0 {
+				grantees := make(map[string]entity)
+				utils.Error("[!] Please review the following entities (users/roles) because they have IMPORT/EXPORT privileges.\n")
+				for _, r := range check.Results {
+					grantee := r["GRANTEE"].(string)
+					grantees[grantee] = entity{
+						Type:       r["GRANTEE_TYPE"].(string),
+						Name:       grantee,
+						Privileges: append(grantees[grantee].Privileges, r["PRIVILEGE"].(string)),
+					}
+				}
+				for _, g := range grantees {
+					fmt.Printf("  - %s (type: %s): %s\n", g.Name, g.Type, strings.Join(g.Privileges, "/"))
+				}
+			} else {
+				utils.Ok("[+] No user/role have IMPORT/EXPORT privileges.\n")
 			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
@@ -342,7 +375,7 @@ func init() {
 		[]string{"sap.hana.xs.admin.roles::HTTPDestAdministrator"},
 	))
 	//////////////////////////////////////////////////////////////////////////////
-	name = "UserParameterClient_0"
+	name = "_pre_UserParameterClient"
 	description = "this check is only performed to support UserParameterClient_1"
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#user-parameter-client"
 	recommendation = "Prevent named users from changing the CLIENT user parameter themselves but allow technical users to do so in their sessions and/or queries."
@@ -351,12 +384,12 @@ func init() {
 		description,
 		link,
 		recommendation,
-		userParameterClient_0,
+		_pre_userParameterClient,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
 	name = "UserParameterClient"
-	description = "	The CLIENT user parameter can be used to authorize named users in SAP HANA. Only a user with the USER ADMIN system privilege can change the value of the CLIENT parameter already assigned to other users. However, at runtime, any user can assign an arbitrary value to the CLIENT parameter either by setting the corresponding session variable or passing the parameter via placeholder in a query. While this is the desired behavior for technical users that work with multiple clients such as SAP Business Warehouse, S/4 HANA, or SAP Business Suite, it is problematic in named user scenarios if the CLIENT parameter is used to authorize access to data and not only to perform data filtering."
+	description = "The CLIENT user parameter can be used to authorize named users in SAP HANA. Only a user with the USER ADMIN system privilege can change the value of the CLIENT parameter already assigned to other users. However, at runtime, any user can assign an arbitrary value to the CLIENT parameter either by setting the corresponding session variable or passing the parameter via placeholder in a query. While this is the desired behavior for technical users that work with multiple clients such as SAP Business Warehouse, S/4 HANA, or SAP Business Suite, it is problematic in named user scenarios if the CLIENT parameter is used to authorize access to data and not only to perform data filtering."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#user-parameter-client"
 	recommendation = "Prevent named users from changing the CLIENT user parameter themselves but allow technical users to do so in their sessions and/or queries."
 	CheckList = append(CheckList, newCheck(
@@ -364,7 +397,33 @@ func init() {
 		description,
 		link,
 		recommendation,
-		userParameterClient_1,
+		userParameterClient,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "_pre_OSFSPermissions"
+	description = "The access permission of files exported to the SAP HANA server can be configured using the [import_export] file_security parameter in the indexserver.ini configuration file. The default permission set is 640 ([import_export] file_security=medium)."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions"
+	recommendation = "Do not change default access permission of exported files. In addition, ensure that only a limited number of database users have the system privilege IMPORT and EXPORT."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		_pre_osFsPermissions,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "OSFSPermissions"
+	description = "The access permission of files exported to the SAP HANA server can be configured using the [import_export] file_security parameter in the indexserver.ini configuration file. Three security levels available: high (600), medium (644, default one), and low (664)."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions"
+	recommendation = "Do not change default access permission of exported files. In addition, ensure that only a limited number of database users have the system privilege IMPORT and EXPORT."
+	CheckList = append(CheckList, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		osFsPermissions,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////

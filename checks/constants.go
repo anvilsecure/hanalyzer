@@ -29,8 +29,10 @@ const (
 	debugPrivilege               string = `SELECT * FROM GRANTED_PRIVILEGES WHERE PRIVILEGE='%s' OR PRIVILEGE='ATTACH DEBUGGER';`
 	predefinedCatalogRole        string = `SELECT * FROM GRANTED_ROLES WHERE ROLE_NAME = '%s' AND GRANTEE NOT IN ('SYSTEM');`
 	predefinedCatalogRoleGeneral string = `SELECT * FROM EFFECTIVE_ROLE_GRANTEES WHERE ROLE_NAME = '%s';`
-	userParameterClient_0        string = `SELECT * FROM "M_INIFILE_CONTENTS" WHERE KEY='secure_client_parameter';`
-	userParameterClient_1        string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = 'CLIENT PARAMETER ADMIN';`
+	_pre_userParameterClient     string = `SELECT * FROM "M_INIFILE_CONTENTS" WHERE KEY='secure_client_parameter';`
+	userParameterClient          string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE = 'CLIENT PARAMETER ADMIN';`
+	_pre_osFsPermissions         string = `SELECT * FROM "PUBLIC" . "M_INIFILE_CONTENTS" WHERE SECTION = 'import_export' AND KEY = 'file_security';`
+	osFsPermissions              string = `SELECT * FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE (OBJECT_TYPE = 'SYSTEMPRIVILEGE') AND (PRIVILEGE = 'EXPORT' OR PRIVILEGE='IMPORT');`
 )
 
 var (

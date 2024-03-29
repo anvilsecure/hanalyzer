@@ -65,7 +65,7 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Debug privileges
 - [x] Predefined Catalog Role CONTENT_ADMIN
 - [x] User Parameter CLIENT
-- [ ] OS file permissions
+- [x] OS file permissions
 - [ ] Audit configuration
 
 ### Other checks
