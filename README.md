@@ -56,17 +56,20 @@ Before setup startup the host and let it start all the processes, otherwise it c
 
 ## Roadmap
 ### Porting from @gvb
-- [x] System user
-- [x] Password lifetime
-- [x] Critical combinations system privileges
-- [x] Data admin system privilege
-- [x] Development system privilege
-- [x] Analytic privilege
+- [x] SYSTEM User
+- [x] Password Lifetime of Database Users
+- [x] System Privileges: Critical Combinations
+- [x] System Privilege: DATA ADMIN
+- [x] System Privilege: DEVELOPMENT
+- [x] Analytic Privilege: _SYS_BI_CP_ALL
 - [x] Debug privileges
-- [x] Predefined catalog roles
-- [ ] Client user parameter
+- [x] Predefined Catalog Role CONTENT_ADMIN
+- [ ] User Parameter CLIENT
 - [ ] OS file permissions
 - [ ] Audit configuration
 
 ### Other checks
-- [X] System privilege
+- [x] System Privileges
+- [x] Predefined Catalog Role MODELING
+- [x] Predefined Catalog Role SAP_INTERNAL_HANA_SUPPORT
+- [ ] Predefined Repository Roles

@@ -185,9 +185,9 @@ func EvaluateResults() {
 			} else {
 				utils.Ok("[+] No user/role has %s privilege.\n", check.Parameters[0])
 			}
-		case "PredefinedCatalogRole":
+		case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport":
 			if len(check.Results) > 0 {
-				utils.Error("[!] The following users/roles have CONTENT_ADMIN role:\n")
+				utils.Error("[!] The following users/roles have %s role:\n", check.Parameters[0])
 				grantees := make(map[string]entity)
 				for _, r := range check.Results {
 					user := r["GRANTEE"].(string)
@@ -199,7 +199,7 @@ func EvaluateResults() {
 				}
 				printGrantees(grantees)
 			} else {
-				utils.Ok("[+] No user/role has CONTENT_ADMIN role.\n")
+				utils.Ok("[+] No user/role has %s role.\n", check.Parameters[0])
 			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
@@ -327,7 +327,7 @@ func init() {
 		[]string{"DEBUG"},
 	))
 	//////////////////////////////////////////////////////////////////////////////
-	name = "PredefinedCatalogRole"
+	name = "PredefinedCatalogRoleContentAdmin"
 	description = "The role CONTENT_ADMIN contains all privileges required for working with information models in the repository of the SAP HANA database. The user SYSTEM has the role CONTENT_ADMIN by default."
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#predefined-catalog-role-content_admin"
 	recommendation = "Only the database user used to perform system updates should have the role CONTENT_ADMIN. Otherwise do not grant this role to users, particularly in production databases. It should be used as a role template only."
@@ -337,7 +337,32 @@ func init() {
 		link,
 		recommendation,
 		predefinedCatalogRole,
-		[]string{},
+		[]string{"CONTENT_ADMIN"},
 	))
 	//////////////////////////////////////////////////////////////////////////////
+	name = "PredefinedCatalogRoleModeling"
+	description = "The role MODELING contains the predefined analytic privilege _SYS_BI_CP_ALL, which potentially allows a user to access all the data in activated views that are protected by XML-based analytic privileges, regardless of any other XML-based analytic privileges that apply. The user SYSTEM has the role MODELING by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-modeling"
+	recommendation = "Do not grant this role to users, particularly in production databases. It should be used as a role template only."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		predefinedCatalogRole,
+		[]string{"MODELING"},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "PredefinedCatalogRoleSAPSupport"
+	description = "The role MODELING contains the predefined analytic privilege _SYS_BI_CP_ALL, which potentially allows a user to access all the data in activated views that are protected by XML-based analytic privileges, regardless of any other XML-based analytic privileges that apply. The user SYSTEM has the role MODELING by default."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-modeling"
+	recommendation = "Do not grant this role to users, particularly in production databases. It should be used as a role template only."
+	AllChecks = append(AllChecks, newCheck(
+		name,
+		description,
+		link,
+		recommendation,
+		predefinedCatalogRoleSAPSupport,
+		[]string{"SAP_INTERNAL_HANA_SUPPORT"},
+	))
 }
