@@ -17,7 +17,7 @@ type Database struct {
 type Results []map[string]interface{}
 
 var (
-	dbConfig     config.DatabaseConfig
+	dbConfig     config.DBConfig
 	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
 	hdbDsn       string
 	DB           *Database
@@ -29,13 +29,13 @@ const (
 )
 
 func init() {
-	dbConfig = config.DBConfig
+	dbConfig = config.Conf.Database
 	hdbDsn = fmt.Sprintf(
 		hdbDsnFormat,
-		dbConfig.Database.Username,
-		dbConfig.Database.Password,
-		dbConfig.Database.Host,
-		dbConfig.Database.Port,
+		dbConfig.Username,
+		dbConfig.Password,
+		dbConfig.Host,
+		dbConfig.Port,
 	)
 	err := connect()
 	if err != nil {

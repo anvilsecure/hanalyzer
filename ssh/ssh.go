@@ -1,14 +1,12 @@
 package ssh
 
 import (
-	"fmt"
+	"bytes"
+	"hana/config"
 	"log"
-	"os"
-	"syscall"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/term"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -17,45 +15,31 @@ var (
 )
 
 type SSHCreds struct {
-	User     string `yaml:"user"`
+	Username string `yaml:"user"`
 	Password string `yaml:"password"`
 }
 
-func readConf() {
-	yamlFile := "ssh.conf.yaml"
-	yamlData, err := os.ReadFile(yamlFile)
-	if err != nil {
-		// If the file doesn't exist, ask the user for input
-		fmt.Print("Enter username: ")
-		var user string
-		fmt.Scanln(&user)
-		fmt.Print("Enter password: ")
-		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-		password := string(bytePassword)
-		sshCreds = SSHCreds{User: user, Password: password}
-	} else {
-		err = yaml.Unmarshal(yamlData, &sshCreds)
-		if err != nil {
-			log.Fatalf("Error parsing YAML: %v", err)
-		}
-	}
-}
-
 func init() {
-	readConf()
-	// Set up the SSH connection
-	config := &ssh.ClientConfig{
-		User: sshCreds.User,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(sshCreds.Password),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	var sshConfig *ssh.ClientConfig
+	sshCreds = SSHCreds{
+		Username: config.Conf.Host.Username,
+		Password: config.Conf.Host.Password,
 	}
+	if sshCreds.Username != "" && sshCreds.Password != "" {
+		// Set up the SSH connection
+		sshConfig = &ssh.ClientConfig{
+			User: sshCreds.Username,
+			Auth: []ssh.AuthMethod{
+				ssh.Password(sshCreds.Password),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+	} else {
+		askForCredentials()
+	}
+
 	var err error
-	SSHClient, err = ssh.Dial("tcp", "hxehost:22", config)
+	SSHClient, err = ssh.Dial("tcp", "hxehost:22", sshConfig)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -63,16 +47,28 @@ func init() {
 	//defer SSHClient.Close()
 }
 
-func ExecCommand(cmd string) (string, error) {
+func ExecCommand(cmd string) (string, string, error) {
 	session, err := SSHClient.NewSession()
 	if err != nil {
-		return "", err
+		return "", "", nil
 	}
 	defer session.Close()
 
-	output, err := session.CombinedOutput(cmd)
+	var stdoutBuf, stderrBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Stderr = &stderrBuf
+
+	err = session.Run(cmd)
+
 	if err != nil {
-		return "", err
+		switch err.Error() {
+		case "Process exited with status 2":
+			if strings.Contains(stderrBuf.String(), "No such file or directory") {
+				return stdoutBuf.String(), stderrBuf.String(), &NoSuchFileOrDirectory
+			}
+		default:
+			return stdoutBuf.String(), stderrBuf.String(), err
+		}
 	}
-	return string(output), nil
+	return stdoutBuf.String(), stderrBuf.String(), nil
 }

@@ -61,7 +61,8 @@ const (
 	dataAndLogVolumeEncryption           string = `SELECT SCOPE,IS_ENCRYPTION_ACTIVE FROM M_ENCRYPTION_OVERVIEW`
 	// SSH commands
 	encryptionKeySAPHANASecureUserStore string = `hdbuserstore list`
-	//rootEncryptionKeys                   string = `SELECT KEY, VALUE FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE FILE_NAME = 'global.ini' AND SECTION = 'database_initial_encryption'`
+	traceFiles                          string = `hdbsqldbc_cons SHOW ALL`
+	dumpFiles                           string = `ls -l /usr/sap/%s/SYS/global/sapcontrol/snapshots`
 )
 
 type Duration struct {

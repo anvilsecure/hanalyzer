@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"errors"
 	"fmt"
 	"hana/db"
 	"hana/ssh"
@@ -64,13 +65,18 @@ func ExecuteQueries() {
 				prepareAndExecute(check)
 			}
 		case Command:
-			out, err := ssh.ExecCommand(check.Control)
-			if err != nil {
-				log.Println(err.Error())
-				return
+			stdOut, stdErr, err := ssh.ExecCommand(check.Control)
+			var sshErr *ssh.SSHError
+			if err != nil && !errors.As(err, &sshErr) {
+				log.Println(err)
+			}
+			if err != nil && errors.As(err, &sshErr) {
+				check.Results = []map[string]interface{}{
+					{"stdOut": stdOut, "stdErr": stdErr, "err": sshErr},
+				}
 			}
 			check.Results = []map[string]interface{}{
-				{"out": out},
+				{"stdOut": stdOut, "stdErr": stdErr, "err": fmt.Errorf("")},
 			}
 		}
 	}
