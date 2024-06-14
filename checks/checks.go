@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func EvaluateResults() {
@@ -13,7 +14,7 @@ func EvaluateResults() {
 		if strings.HasPrefix(check.Name, "_pre_") {
 			continue
 		}
-		utils.Warning("Check: %s\n", check.Name)
+		utils.Title("Check: %s\n", check.Name)
 		switch check.Name {
 		case "CheckSystemUser":
 			if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
@@ -329,6 +330,86 @@ func EvaluateResults() {
 				}
 				utils.Warning("If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n")
 			}
+		case "InstanceSSFSMasterKey":
+			if len(check.Results) == 0 {
+				utils.Error("[!] Instance SSFS Master Key has never been rotated.\n")
+			} else {
+				utils.Ok("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+			}
+		case "SystemPKISSFSMasterKey":
+			if len(check.Results) == 0 {
+				utils.Error("[!] System PKI SSFS Master Key has never been rotated.\n")
+			} else {
+				utils.Ok("[+] System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+			}
+		case "PasswordHashMethods":
+			if len(check.Results) == 0 ||
+				(len(check.Results) == 1 &&
+					strings.Contains(strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])), "sha256")) {
+				utils.Warning("[!] Legacy and deprecated password storage method in use (SHA256).\n")
+			} else if len(check.Results) == 1 && strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])) == "pbkdf2" {
+				utils.Warning("[+] All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n")
+			}
+		case "RootEncryptionKeys":
+			for _, record := range check.Results {
+				keyVersions := record["VERSIONS"].(int64)
+				keyType := record["ROOT_KEY_TYPE"].(string)
+				keyCreationDateString := record["CREATION_DATE"].(string)
+				keyLastVersionDateString := record["LAST_VERSION_DATE"].(string)
+				layout := "2006-01-02 15:04:05"
+				keyCreationDate, err := time.Parse(layout, keyCreationDateString)
+				if err != nil {
+					log.Println(err.Error())
+				}
+				keyLastVersionDate, _ := time.Parse(layout, keyLastVersionDateString)
+				if err != nil {
+					log.Println(err.Error())
+				}
+				if keyVersions == 1 {
+					utils.Error("[!] ROOT key of type '%s' was never rotated.\n", keyType)
+					utils.Info("\t- Creation date: %s\n", utils.Red(keyCreationDate.Format(layout)))
+				} else {
+					duration := oneMonth
+					if time.Now().After(keyLastVersionDate.Add(duration.Value)) {
+						utils.Warning("[!] ROOT key of type '%s' was rotated more than %s ago.\n", keyType, duration.Literal)
+						utils.Info("\t- Creation date: %s\n\t- Rotation date: %s\n", keyCreationDate.Format(layout), utils.Yellow(keyLastVersionDate.Format(layout)))
+					} else {
+						utils.Ok("[+] ROOT key of type '%s' was rotated less than %s ago.\n", keyType, duration.Literal)
+						utils.Info("\t- Creation date: %s\n\t- Rotation date: %s\n", keyCreationDate.Format(layout), keyLastVersionDate.Format(layout))
+					}
+				}
+			}
+		case "DataAndLogVolumeEncryption":
+			var dict = map[string]string{
+				"PERSISTENCE": "Data",
+				"LOG":         "Log",
+				"BACKUP":      "Backup",
+			}
+			for _, record := range check.Results {
+				enabled := false
+				scope, ok := record["SCOPE"].(string)
+				if !ok {
+					log.Printf("Type assertion of %s failed.\n", record["SCOPE"])
+				}
+				if strings.ToLower(record["IS_ENCRYPTION_ACTIVE"].(string)) == "true" {
+					enabled = true
+				}
+				if !ok {
+					log.Printf("Type assertion of %s failed.\n", record["IS_ENCRYPTION_ACTIVE"])
+				}
+				if enabled {
+					utils.Ok("[+] Encryption of %s is active.\n", dict[scope])
+				} else {
+					utils.Error("[!] Encryption of %s is disabled.\n", dict[scope])
+				}
+			}
+		case "EncryptionKeySAPHANASecureUserStore":
+			out := check.Results[0]["out"].(string)
+			if strings.Contains(out, "KEY FILE") {
+				utils.Ok("[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.\n")
+			} else {
+				utils.Error("[!] Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n")
+			}
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -351,6 +432,7 @@ func init() {
 	link := "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#system-user"
 	recommendation := "Use SYSTEM to create database users with the minimum privilege set required for their duties (for example, user administration, system administration). Then deactivate SYSTEM."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -364,6 +446,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#password-lifetime-of-database-users"
 	recommendation = "Do not disable the password lifetime check for database users that correspond to real people."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -379,6 +462,7 @@ func init() {
 	p := "'" + strings.Join(ADMIN_PRIVILEGES, "', '") + "'"
 	stmt := fmt.Sprintf(systemPrivileges, p)
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -395,6 +479,7 @@ func init() {
 	stmt = fmt.Sprintf(criticalCombinations, p)
 	//fmt.Println(stmt)
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -408,6 +493,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privilege%3A-data-admin"
 	recommendation = "No user or role in a production database should have this privilege."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -421,6 +507,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#system-privilege%3A-development"
 	recommendation = "No user or role in a production database should have this privilege."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -434,6 +521,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#analytic-privilege%3A-_sys_bi_cp_all"
 	recommendation = "Do not grant this privilege to any user or role in a production database."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -447,6 +535,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#debug-privileges"
 	recommendation = "The privileges DEBUG and ATTACH DEBUGGER should not be assigned to any user for any object in production systems."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -460,6 +549,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?locale=en-US#predefined-catalog-role-content_admin"
 	recommendation = "Only the database user used to perform system updates should have the role CONTENT_ADMIN. Otherwise do not grant this role to users, particularly in production databases. It should be used as a role template only."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -473,6 +563,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-modeling"
 	recommendation = "Do not grant this role to users, particularly in production databases. It should be used as a role template only."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -486,6 +577,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-catalog-role-sap_internal_hana_support"
 	recommendation = "This role should only be granted to SAP HANA development support users for their support activities."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -499,6 +591,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#predefined-repository-roles"
 	recommendation = "As repository roles can change when a new version of the package is deployed, either do not use them directly but instead as a template for creating your own roles, or have a regular review process in place to verify that they still contain only privileges that are in line with your organization's security policy. Furthermore, if repository package privileges are granted by a role, we recommend that these privileges be restricted to your organization's packages rather than the complete repository. Therefore, for each package privilege (REPO.*) that occurs in a role template and is granted on .REPO_PACKAGE_ROOT, check whether the privilege can and should be granted to a single package or a small number of specific packages rather than the full repository."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -512,6 +605,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#user-parameter-client"
 	recommendation = "Prevent named users from changing the CLIENT user parameter themselves but allow technical users to do so in their sessions and/or queries."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -525,6 +619,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#user-parameter-client"
 	recommendation = "Prevent named users from changing the CLIENT user parameter themselves but allow technical users to do so in their sessions and/or queries."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -538,6 +633,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions"
 	recommendation = "Do not change default access permission of exported files. In addition, ensure that only a limited number of database users have the system privilege IMPORT and EXPORT."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -551,6 +647,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions"
 	recommendation = "Do not change default access permission of exported files. In addition, ensure that only a limited number of database users have the system privilege IMPORT and EXPORT."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -564,6 +661,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#auditing"
 	recommendation = "Verify whether auditing is required by your security concept, for example to fulfill specific compliance and regulatory requirements."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -577,6 +675,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#auditing"
 	recommendation = "Verify whether auditing is required by your security concept, for example to fulfill specific compliance and regulatory requirements."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -590,6 +689,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-csv-text-file"
 	recommendation = "Do not configure CSV text file (CSVTEXTFILE) as an audit trail target in a production system as it has severe restrictions."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -603,6 +703,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-csv-text-file"
 	recommendation = "Do not configure CSV text file (CSVTEXTFILE) as an audit trail target in a production system as it has severe restrictions."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -616,6 +717,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#internal-host-name-resolution-in-single-host-system"
 	recommendation = "Do not change the default setting."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -629,6 +731,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#internal-host-name-resolution-in-multiple-host-system"
 	recommendation = "Multiple-host systems can run with or without a separate network definition for inter-service communication. The recommended setting depends accordingly. If a separate network is configured for internal communication, the parameter [communication] listeninterface should be set to .internal. If a separate network is not configured for internal communication, the parameter [communication] listeninterface should be set to .global."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -642,6 +745,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#host-name-resolution-in-system-replication"
 	recommendation = "The recommended setting depends on whether or not a separate network is defined for internal communication. If a separate internal network channel is configured for system replication, the parameter [system_replication_communication] listeninterface parameter should be .internal. If a separate network is not configured for system replication, the parameter [system_replication_communication] listeninterface should be set to .global."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -655,6 +759,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#host-name-resolution-in-system-replication"
 	recommendation = "The recommended setting depends on whether or not a separate network is defined for internal communication. If a separate internal network channel is configured for system replication, the parameter [system_replication_communication] listeninterface parameter should be .internal. If a separate network is not configured for system replication, the parameter [system_replication_communication] listeninterface should be set to .global."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -668,6 +773,7 @@ func init() {
 	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#host-name-resolution-in-system-replication"
 	recommendation = "The recommended setting depends on whether or not a separate network is defined for internal communication. If a separate internal network channel is configured for system replication, the parameter [system_replication_communication] listeninterface parameter should be .internal. If a separate network is not configured for system replication, the parameter [system_replication_communication] listeninterface should be set to .global."
 	CheckList = append(CheckList, newCheck(
+		Query,
 		name,
 		description,
 		link,
@@ -676,4 +782,87 @@ func init() {
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
+	name = "InstanceSSFSMasterKey"
+	description = "The instance secure store in the file system (SSFS) protects internal root keys in the file system. A unique master key is generated for the instance SSFS in every installation."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#instance-ssfs-master-key"
+	recommendation = "If you received your system pre-installed from a hardware or hosting partner, we recommend that you change the master key of the instance SSFS immediately after handover to ensure that it is not known outside of your organization."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		instanceSSFSMasterKey,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "SystemPKISSFSMasterKey"
+	description = "The system public key infrastructure (PKI) SSFS protects the X.509 certificate infrastructure that is used to secure internal TLS/SSL-based communication. A unique master key is generated for the system PKI SSFS in every installation."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#system-pki-ssfs-master-key"
+	recommendation = "If you received your system pre-installed from a hardware or hosting partner, we recommend that you change the master key of the instance SSFS immediately after handover to ensure that it is not known outside of your organization."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		systemPKISSFSMasterKey,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "PasswordHashMethods"
+	description = "All database user passwords are stored in salted hash form using PBKDF2 (Password-Based Key Derivation Function 2) and, for downward compatibility, secure hash algorithm SHA-256. The SAP HANA implementation of PBKDF2 uses the SHA-256 secure hash algorithm and 15,000 iterations."
+	link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/6b94445c94ae495c83a19646e7c3fd56/b30fda1483b34628802a8d62bd5d39df.html"
+	recommendation = "If not strictly required disable hash method SHA-256. The hash method SHA-256 can be disabled by setting the parameter [authentication] password_hash_methods in the global.ini configuration file to pbkdf2. The default value is pbkdf2,sha256."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		passwordHashMethods,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "RootEncryptionKeys"
+	description = "Unique root keys are generated during installation or database creation."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#root-encryption-keys"
+	recommendation = "If you received your system pre-installed from a hardware or hosting partner, we recommend that you change all root keys immediately after handover to ensure that they are not known outside of your organization."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		rootEncryptionKeys,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "DataAndLogVolumeEncryption"
+	description = "Data and log volume encryption are not enabled by default."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#data-and-log-volume-encryption"
+	recommendation = "We recommend that you enable data and log volume encryption immediately after installation or handover from your hardware or hosting partner, and after you have changed the root encryption keys for both services"
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		dataAndLogVolumeEncryption,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "EncryptionKeySAPHANASecureUserStore"
+	description = "The secure user store (hdbuserstore) is a tool installed with the SAP HANA client. It is used to store SAP HANA connection information, including user passwords, securely on clients. Information contained in the SAP HANA secure user store is encrypted using a unique encryption key."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#encryption-key-of-the-sap-hana-secure-user-store-(hdbuserstore)"
+	recommendation = "If you are using the current version of the SAP HANA client, there is no need to change the encryption key of the secure user store. However, if you are using an older version of the SAP HANA client, we recommend changing the encryption key after installation of the SAP HANA client."
+	CheckList = append(CheckList, newCheck(
+		Command,
+		name,
+		description,
+		link,
+		recommendation,
+		encryptionKeySAPHANASecureUserStore,
+		[]string{},
+	))
 }

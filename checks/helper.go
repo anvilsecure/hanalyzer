@@ -3,6 +3,7 @@ package checks
 import (
 	"fmt"
 	"hana/db"
+	"hana/ssh"
 	"hana/utils"
 	"log"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-func executeQuery(query string) (results db.Results) {
+func executeQuery(query string) (results Results) {
 	res := db.Query(query)
 	// Do something with the map
 	for _, r := range res {
@@ -45,9 +46,9 @@ func prepareAndExecute(check *Check) {
 		utils.Error("We aren't ready yet to prepare statements w/ mutiple parameters :[")
 		os.Exit(1)
 	}
-	var res db.Results
+	var res Results
 	for _, p := range check.Parameters {
-		stmt := fmt.Sprintf(check.Query, p)
+		stmt := fmt.Sprintf(check.Control, p)
 		res = executeQuery(stmt)
 	}
 	check.Results = res
@@ -55,25 +56,38 @@ func prepareAndExecute(check *Check) {
 
 func ExecuteQueries() {
 	for _, check := range CheckList {
-		if len(check.Parameters) == 0 {
-			check.Results = executeQuery(check.Query)
-		} else {
-			prepareAndExecute(check)
+		switch check.Type {
+		case Query:
+			if len(check.Parameters) == 0 {
+				check.Results = executeQuery(check.Control)
+			} else {
+				prepareAndExecute(check)
+			}
+		case Command:
+			out, err := ssh.ExecCommand(check.Control)
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			check.Results = []map[string]interface{}{
+				{"out": out},
+			}
 		}
 	}
 }
-func newCheck(name, description, link, recommendation, query string, parameters []string) *Check {
-	if name == "" || query == "" {
+func newCheck(checkType CheckType, name, description, link, recommendation, control string, parameters []string) *Check {
+	if name == "" || control == "" {
 		log.Fatalf("Query creation failed. Name and Query fields required.")
 	}
 	return &Check{
+		Type:           checkType,
 		Name:           name,
 		Description:    description,
 		Link:           link,
 		Recommendation: recommendation,
-		Query:          query,
+		Control:        control,
 		Parameters:     parameters,
-		Results:        db.Results{},
+		Results:        Results{},
 		Result:         false,
 	}
 }

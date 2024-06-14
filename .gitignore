@@ -3,3 +3,4 @@ hana/**
 conf.yml
 *.exe
 replace-text.txt
+ssh.conf.yaml

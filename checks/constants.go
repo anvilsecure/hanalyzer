@@ -1,14 +1,26 @@
 package checks
 
-import "hana/db"
+import (
+	"time"
+)
+
+type CheckType string
+
+const (
+	Query   CheckType = "query"
+	Command CheckType = "command"
+)
+
+type Results []map[string]interface{}
 
 type Check struct {
+	Type           CheckType
 	Name           string
 	Description    string
 	Link           string
 	Recommendation string
-	Query          string
-	Results        db.Results
+	Control        string
+	Results        Results
 	Parameters     []string
 	Result         bool
 }
@@ -42,6 +54,23 @@ const (
 	_pre_0_hostnameResolutionReplication string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'system_replication_communication' AND KEY = 'listeninterface';`
 	_pre_1_hostnameResolutionReplication string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'system_replication_communication' AND KEY = 'internal_hostname_resolution';`
 	hostnameResolutionReplication        string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE SECTION = 'system_replication_communication' AND KEY = 'allowed_sender';`
+	instanceSSFSMasterKey                string = `SELECT * FROM M_HOST_INFORMATION WHERE KEY IN ('SSFS_MASTERKEY_CHANGED','ssfs_masterkey_changed')`
+	systemPKISSFSMasterKey               string = `SELECT * FROM M_HOST_INFORMATION WHERE KEY IN ('SSFS_MASTERKEY_SYSTEMPKI_CHANGED','ssfs_masterkey_systempki_changed')`
+	passwordHashMethods                  string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE FILE_NAME = 'global.ini' AND SECTION = 'authentication' AND KEY = 'password_hash_methods'`
+	rootEncryptionKeys                   string = `SELECT ROOT_KEY_TYPE,COUNT(CREATE_TIMESTAMP) AS Versions,MIN(TO_SECONDDATE(CREATE_TIMESTAMP)) AS CREATION_DATE, MAX(TO_SECONDDATE(CREATE_TIMESTAMP)) AS LAST_VERSION_DATE FROM ENCRYPTION_ROOT_KEYS WHERE ROOT_KEY_STATUS IN ('ACTIVE','DEACTIVATED') GROUP BY ROOT_KEY_TYPE`
+	dataAndLogVolumeEncryption           string = `SELECT SCOPE,IS_ENCRYPTION_ACTIVE FROM M_ENCRYPTION_OVERVIEW`
+	// SSH commands
+	encryptionKeySAPHANASecureUserStore string = `hdbuserstore list`
+	//rootEncryptionKeys                   string = `SELECT KEY, VALUE FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE FILE_NAME = 'global.ini' AND SECTION = 'database_initial_encryption'`
+)
+
+type Duration struct {
+	Literal string
+	Value   time.Duration
+}
+
+const (
+	MONTH = time.Duration(731) * time.Hour
 )
 
 var (
@@ -51,9 +80,21 @@ var (
 	ADMIN_PRIVILEGES = []string{"CATALOG READ", "TRACE ADMIN", "ADAPTER ADMIN", "AGENT ADMIN", "AUDIT ADMIN", "AUDIT OPERATOR", "BACKUP ADMIN", "BACKUP OPERATOR", "CERTIFICATE ADMIN", "CREATE REMOTE SOURCE", "CREDENTIAL ADMIN", "ENCRYPTION ROOT KEY ADMIN", "EXTENDED STORAGE ADMIN", "INIFILE ADMIN", "LDAP ADMIN", "LICENSE ADMIN", "LOG ADMIN", "MONITOR ADMIN", "OPTIMIZER ADMIN", "RESOURCE ADMIN", "SAVEPOINT ADMIN", "SERVICE ADMIN", "SESSION ADMIN", "SSL ADMIN", "TABLE ADMIN", "TRUST ADMIN", "VERSION ADMIN", "WORKLOAD ADMIN", "WORKLOAD ANALYZE ADMIN", "WORKLOAD CAPTURE ADMIN", "WORKLOAD REPLAY ADMIN"}
 	DANGEROUS_COMBO  = [][]string{
 		{"USER ADMIN", "ROLE ADMIN"},
-		// {"USER ADMIN", "INIFILE ADMIN"}, // this is safe, only for testing purposesS
+		// {"USER ADMIN", "INIFILE ADMIN"}, // this is safe, only for testing purposes
 		{"CREATE SCENARIO", "SCENARIO ADMIN"},
 		{"AUDIT ADMIN", "AUDIT OPERATOR"},
 		{"CREATE STRUCTURED PRIVILEGE", "STRUCTUREDPRIVILEGE ADMIN"},
+	}
+	oneMonth Duration = Duration{
+		Literal: "one month",
+		Value:   1 * MONTH,
+	}
+	threeMonths Duration = Duration{
+		Literal: "three months",
+		Value:   3 * MONTH,
+	}
+	sixMonths Duration = Duration{
+		Literal: "six months",
+		Value:   6 * MONTH,
 	}
 )

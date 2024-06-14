@@ -92,11 +92,11 @@ Before setup startup the host and let it start all the processes, otherwise it c
 - [x] Host Name Resolution in System Replication
 
 ### [Recommendations for Data Encryption](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0)
-- [ ] Instance SSFS Master Key
-- [ ] System PKI SSFS Master Key
-- [ ] Root Encryption Keys
-- [ ] Encryption Key of the SAP HANA Secure User Store (hdbuserstore)
-- [ ] Data and Log Volume Encryption
+- [x] Instance SSFS Master Key
+- [x] System PKI SSFS Master Key
+- [x] Root Encryption Keys
+- [x] Encryption Key of the SAP HANA Secure User Store (hdbuserstore)
+- [x] Data and Log Volume Encryption
 
 ### [Recommendations for Trace and Dump Files](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/9630172f36564ee5ba26c13c054a35e1.html?locale=en-US&version=2.12.0.0)
 - [ ] Trace Files
