@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"gopkg.in/agrison/go-tablib.v1"
 )
 
 func EvaluateResults() {
@@ -431,10 +433,9 @@ func EvaluateResults() {
 				utils.Ok("[+] Trace files not found\n")
 			}
 		case "DumpFiles":
-			out := check.Results
-			if len(out) > 0 {
-				utils.Warning("[!] Dump files found\n")
-				for _, f := range out {
+			if len(check.Results) > 0 {
+				utils.Warning("[!] Dump files found.\n")
+				for _, f := range check.Results {
 					utils.Info(fmt.Sprintf(
 						"%-20s %-20s %-s\n",
 						fmt.Sprintf("%-10d byte", f["FILE_SIZE"]),
@@ -444,6 +445,86 @@ func EvaluateResults() {
 				}
 			} else {
 				utils.Ok("[+] Dump files not found\n")
+			}
+		case "SAMLBasedAuthN":
+			if len(check.Results) > 0 {
+				utils.Warning("[!] The following SAML or SSL certificates were found.\nPlease review them carefully to avoid authentication issues cross-tenant.\n")
+				for _, f := range check.Results {
+					utils.Info(fmt.Sprintf(
+						"%-20s %-20s %-20s %-s\n",
+						f["PSE_ID"],
+						f["NAME"],
+						f["PURPOSE"],
+						f["OWNER_NAME"],
+					))
+				}
+			} else {
+				utils.Ok("[+] No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n")
+			}
+		case "ConfigurationBlacklist":
+			ds := tablib.NewDataset([]string{
+				"LAYER_NAME",
+				"TENANT_NAME",
+				"HOST",
+				"SECTION",
+				"KEY",
+				"VALUE",
+			})
+			if len(check.Results) > 0 {
+				utils.Warning("[!] Please review the following configuration blacklist entries in file multidb.ini.\n")
+				for _, f := range check.Results {
+					ds.AppendValues(
+						f["LAYER_NAME"],
+						f["TENANT_NAME"],
+						f["HOST"],
+						f["SECTION"],
+						f["KEY"],
+						f["VALUE"],
+					)
+				}
+				out := ds.Markdown()
+				fmt.Println(out)
+			} else {
+				log.Fatalln("No configuration found. SAP Hana usually has default configuration. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_INIFILE_CONTENTS\" WHERE FILE_NAME = 'multidb.ini'`")
+			}
+		case "RestrictedFeatures":
+			ds := tablib.NewDataset([]string{
+				"NAME",
+				"DESCRIPTION",
+			})
+			if len(check.Results) > 0 {
+				utils.Warning("[!] Please review the following customizable functionalities.\n")
+				for _, f := range check.Results {
+					ds.AppendTagged(
+						[]interface{}{
+							f["NAME"],
+							f["DESCRIPTION"],
+						},
+						fmt.Sprintf("%s", f["IS_ENABLED"]),
+					)
+				}
+				enabled := ds.Filter("TRUE")
+				enabledOutput := ""
+				if len(enabled.Dict()) > 0 {
+					enabledOutput = enabled.Markdown()
+					utils.Info("Enabled features\n")
+					fmt.Println(enabledOutput)
+				}
+				disabled := ds.Filter("FALSE")
+				disabledOutput := ""
+				if len(disabled.Dict()) > 0 {
+					disabledOutput = disabled.Markdown()
+					utils.Info("Disabled features\n")
+					fmt.Println(disabledOutput)
+				}
+				if len(disabled.Dict()) == 0 {
+					utils.Info("All features are enabled.\n")
+				}
+				if len(enabled.Dict()) == 0 {
+					utils.Info("All features are disabled.\n")
+				}
+			} else {
+				log.Fatalln("No customizable functionalities found. SAP Hana usually has default customizable functionalities. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_CUSTOMIZABLE_FUNCTIONALITIES\"`")
 			}
 		/* case "TraceFilesSSH":
 		out := check.Results[0]["stdOut"].(string)
@@ -980,6 +1061,48 @@ func init() {
 		link,
 		recommendation,
 		dumpFiles,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "SAMLBasedAuthN"
+	description = "All tenant databases use the same trust store as the system database for SAML-based user authentication"
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/a6e033bd909948d5b12caeb2ceba20d4.html?version=2.12.0.0#saml-based-user-authentication"
+	recommendation = "To prevent users of one tenant database being able to log on to other databases in the system (including the system database) using SAML, create individual certificate collections with the purpose SAML and SSL in every tenant database. In addition, specify a non-existent trust store for every tenant database using the [communication] sslTrustStore property in the global.ini file."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		SAMLBasedAuthN,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "ConfigurationBlacklist"
+	description = "A configuration change blacklist (multidb.ini) is delivered with a default configuration. The parameters contained in the blacklist can only be changed by a system administrator in the system database, not by the administrators of individual tenant databases."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/a6e033bd909948d5b12caeb2ceba20d4.html?version=2.12.0.0#configuration-blacklist"
+	recommendation = "Verify that the parameters included in the multidb.ini file meet your requirements and customize if necessary."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		configurationBlacklist,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	name = "RestrictedFeatures"
+	description = "	To safeguard and/or customize your system, it is possible to disable certain database features that provide direct access to the file system, the network, or other resources, for example import and export operations and backup functions. No features are disabled by default."
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/a6e033bd909948d5b12caeb2ceba20d4.html?version=2.12.0.0#restricted-features"
+	recommendation = "Review the list of features that can be disabled and disable those that are not required in your implementation scenario."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		restrictedFeatures,
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////

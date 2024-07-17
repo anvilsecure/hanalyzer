@@ -67,9 +67,9 @@ instance:
 - [x] Dump Files
 
 ### [Recommendations for Tenant Database Management](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/a6e033bd909948d5b12caeb2ceba20d4.html?locale=en-US&version=2.12.0.0)
-- [ ] SAML-Based User Authentication
-- [ ] Configuration Blacklist
-- [ ] Restricted Features
+- [x] SAML-Based User Authentication
+- [x] Configuration Blacklist
+- [x] Restricted Features
 
 # Notes
 

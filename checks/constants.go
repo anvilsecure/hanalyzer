@@ -62,6 +62,9 @@ const (
 	_pre_0_TraceFiles                    string = `SELECT VIEW_NAME FROM SYS.VIEWS WHERE VIEW_NAME = 'M_TRACEFILES';`
 	traceFiles                           string = `SELECT * FROM SYS.M_TRACEFILES`
 	dumpFiles                            string = `SELECT * FROM SYS.FULL_SYSTEM_INFO_DUMPS`
+	SAMLBasedAuthN                       string = `SELECT * FROM PSES WHERE PURPOSE ='SAML' OR PURPOSE ='SSL'`
+	configurationBlacklist               string = `SELECT * FROM "PUBLIC". "M_INIFILE_CONTENTS" WHERE FILE_NAME = 'multidb.ini'`
+	restrictedFeatures                   string = `SELECT * FROM "PUBLIC". "M_CUSTOMIZABLE_FUNCTIONALITIES"`
 	// SSH commands
 	encryptionKeySAPHANASecureUserStore string = `hdbuserstore list`
 	traceFilesCommand                   string = `hdbsqldbc_cons SHOW ALL`
