@@ -67,8 +67,6 @@ const (
 	restrictedFeatures                   string = `SELECT * FROM "PUBLIC". "M_CUSTOMIZABLE_FUNCTIONALITIES"`
 	// SSH commands
 	encryptionKeySAPHANASecureUserStore string = `hdbuserstore list`
-	traceFilesCommand                   string = `hdbsqldbc_cons SHOW ALL`
-	dumpFilesSSH                        string = `ls -l /usr/sap/%s/SYS/global/sapcontrol/snapshots`
 )
 
 type Duration struct {

@@ -526,46 +526,6 @@ func EvaluateResults() {
 			} else {
 				log.Fatalln("No customizable functionalities found. SAP Hana usually has default customizable functionalities. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_CUSTOMIZABLE_FUNCTIONALITIES\"`")
 			}
-		/* case "TraceFilesSSH":
-		out := check.Results[0]["stdOut"].(string)
-		pattern := `Trace\s+flags\s*:\s*\(none\s+set\)`
-		re := regexp.MustCompile(pattern)
-		match := re.MatchString(out)
-		if match {
-			utils.Ok("[+] Trace option not enabled\n")
-		} else {
-			utils.Warning("[!] Trace option enabled\n")
-			utils.Info("Enabled traces:\n")
-			pattern := `(?m)^\s*(.+?)\s+trace\s+:\s+(enabled|disabled)$`
-			re := regexp.MustCompile(pattern)
-
-			// Find all matches
-			matches := re.FindAllStringSubmatch(out, -1)
-
-			// Extract and print each trace and its status
-			for _, match := range matches {
-				traceName := strings.TrimSpace(match[1])
-				traceStatus := strings.TrimSpace(match[2])
-				utils.Info("%s trace: ", traceName)
-				if traceStatus == "enabled" {
-					fmt.Println(utils.Green(traceStatus))
-				} else if traceStatus == "disabled" {
-					fmt.Println(utils.Red(traceStatus))
-				}
-			}
-		}
-		case "DumpFilesSSH":
-			var sshErr *ssh.SSHError
-			fmt.Printf("stdOut: %s\n", check.Results[0]["stdOut"])
-			fmt.Printf("stdErr: %s\n", check.Results[0]["stdErr"])
-			fmt.Printf("err: %s\n", check.Results[0]["err"])
-			err := check.Results[0]["err"].(error)
-			if err != nil && errors.As(err, &sshErr) {
-				fmt.Printf("Error is not nil: %v\n", sshErr)
-				if sshErr.Code() == 2 {
-					utils.Green("[+] Directory /usr/sap/%s/SYS/global/sapcontrol/snapshots not found.\n", config.Conf.Instance.SID)
-				}
-			} */
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -1105,19 +1065,4 @@ func init() {
 		restrictedFeatures,
 		[]string{},
 	))
-	//////////////////////////////////////////////////////////////////////////////
-	/* name = "DumpFilesSSH"
-	description = "The system generates core dump files (for example, crash dump files) automatically. Runtime (RTE) dump files can be triggered explicitly, for example by using the SAP HANA database management console (hdbcons) or as part of a full system information dump (fullSystemInfoDump.py). Dump files are stored in the trace directory and have the same access permissions as other trace files (see above). Runtime dump files created as part of a full system information dump can be retrieved by users with the EXECUTE privilege on the procedure SYS.FULL_SYSTEM_INFO_DUMP_RETRIEVE. At operating system level, any user in the SAPSYS group can access their storage location: /usr/sap/SID/SYS/global/sapcontrol/snapshots"
-	link = "https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-security-guide/recommendations-for-trace-and-dump-files#dump-files"
-	recommendation = "- Generate runtime dump files to analyze specific error situations only, typically at the request of SAP support.\n- Delete dump files that are no longer needed."
-	command := fmt.Sprintf(dumpFiles, config.Conf.Instance.SID)
-	CheckList = append(CheckList, newCheck(
-		Command,
-		name,
-		description,
-		link,
-		recommendation,
-		command,
-		[]string{},
-	)) */
 }
