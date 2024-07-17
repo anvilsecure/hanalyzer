@@ -1,14 +1,10 @@
 package checks
 
 import (
-	"errors"
 	"fmt"
-	"hana/config"
-	"hana/ssh"
 	"hana/utils"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -415,34 +411,69 @@ func EvaluateResults() {
 				utils.Error("[!] Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n")
 			}
 		case "TraceFiles":
-			out := check.Results[0]["stdOut"].(string)
-			pattern := `Trace\s+flags\s*:\s*\(none\s+set\)`
-			re := regexp.MustCompile(pattern)
-			match := re.MatchString(out)
-			if match {
-				utils.Error("[!] Trace option not enabled\n")
-			} else {
-				utils.Ok("[+] Trace option enabled\n")
-				utils.Info("Enabled traces:\n")
-				pattern := `(?m)^\s*(.+?)\s+trace\s+:\s+(enabled|disabled)$`
-				re := regexp.MustCompile(pattern)
-
-				// Find all matches
-				matches := re.FindAllStringSubmatch(out, -1)
-
-				// Extract and print each trace and its status
-				for _, match := range matches {
-					traceName := strings.TrimSpace(match[1])
-					traceStatus := strings.TrimSpace(match[2])
-					utils.Info("%s trace: ", traceName)
-					if traceStatus == "enabled" {
-						fmt.Println(utils.Green(traceStatus))
-					} else if traceStatus == "disabled" {
-						fmt.Println(utils.Red(traceStatus))
-					}
+			pre0, err := getCheckByName("_pre_0_TraceFiles")
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			out := check.Results
+			if len(pre0.Results) > 0 && len(out) > 0 {
+				utils.Warning("[!] Trace files found\n")
+				for _, f := range out {
+					utils.Info(fmt.Sprintf(
+						"%-20s %-20s %-s\n",
+						fmt.Sprintf("%-10d byte", f["FILE_SIZE"]),
+						f["FILE_MTIME"],
+						f["FILE_NAME"],
+					))
 				}
+			} else {
+				utils.Ok("[+] Trace files not found\n")
 			}
 		case "DumpFiles":
+			out := check.Results
+			if len(out) > 0 {
+				utils.Warning("[!] Dump files found\n")
+				for _, f := range out {
+					utils.Info(fmt.Sprintf(
+						"%-20s %-20s %-s\n",
+						fmt.Sprintf("%-10d byte", f["FILE_SIZE"]),
+						f["FILE_MTIME"],
+						f["FILE_NAME"],
+					))
+				}
+			} else {
+				utils.Ok("[+] Dump files not found\n")
+			}
+		/* case "TraceFilesSSH":
+		out := check.Results[0]["stdOut"].(string)
+		pattern := `Trace\s+flags\s*:\s*\(none\s+set\)`
+		re := regexp.MustCompile(pattern)
+		match := re.MatchString(out)
+		if match {
+			utils.Ok("[+] Trace option not enabled\n")
+		} else {
+			utils.Warning("[!] Trace option enabled\n")
+			utils.Info("Enabled traces:\n")
+			pattern := `(?m)^\s*(.+?)\s+trace\s+:\s+(enabled|disabled)$`
+			re := regexp.MustCompile(pattern)
+
+			// Find all matches
+			matches := re.FindAllStringSubmatch(out, -1)
+
+			// Extract and print each trace and its status
+			for _, match := range matches {
+				traceName := strings.TrimSpace(match[1])
+				traceStatus := strings.TrimSpace(match[2])
+				utils.Info("%s trace: ", traceName)
+				if traceStatus == "enabled" {
+					fmt.Println(utils.Green(traceStatus))
+				} else if traceStatus == "disabled" {
+					fmt.Println(utils.Red(traceStatus))
+				}
+			}
+		}
+		case "DumpFilesSSH":
 			var sshErr *ssh.SSHError
 			fmt.Printf("stdOut: %s\n", check.Results[0]["stdOut"])
 			fmt.Printf("stdErr: %s\n", check.Results[0]["stdErr"])
@@ -453,7 +484,7 @@ func EvaluateResults() {
 				if sshErr.Code() == 2 {
 					utils.Green("[+] Directory /usr/sap/%s/SYS/global/sapcontrol/snapshots not found.\n", config.Conf.Instance.SID)
 				}
-			}
+			} */
 		default:
 			utils.Error("Unknown check name %s\n", check.Name)
 			os.Exit(1)
@@ -910,12 +941,26 @@ func init() {
 		[]string{},
 	))
 	//////////////////////////////////////////////////////////////////////////////
+	name = "_pre_0_TraceFiles"
+	description = "preliminary query #1 for trace files check"
+	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/9630172f36564ee5ba26c13c054a35e1.html?locale=en-US&version=2.12.0.0#trace-files"
+	recommendation = "- Enable tracing to troubleshoot specific problems only and then disable.\n- Exercise caution when setting or changing the trace level. A high trace level may expose certain security-relevant data (for example, database trace level DEBUG or SQL trace level ALL_WITH_RESULTS).\n- Delete trace files that are no longer needed."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		_pre_0_TraceFiles,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
 	name = "TraceFiles"
 	description = "Basic tracing of activity in database components is enabled by default, with each database service writing to its own trace file. Other traces (for example, SQL trace, expensive statements trace, performance trace) must be explicitly enabled. Users with the system privilege CATALOG READ can read the contents of trace files in the SAP HANA studio. At operating system level, any user in the SAPSYS group can access the trace directory: /usr/sap/<SID>/HDB<instance>/<host>/trace/<db_name>"
 	link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/9630172f36564ee5ba26c13c054a35e1.html?locale=en-US&version=2.12.0.0#trace-files"
 	recommendation = "- Enable tracing to troubleshoot specific problems only and then disable.\n- Exercise caution when setting or changing the trace level. A high trace level may expose certain security-relevant data (for example, database trace level DEBUG or SQL trace level ALL_WITH_RESULTS).\n- Delete trace files that are no longer needed."
 	CheckList = append(CheckList, newCheck(
-		Command,
+		Query,
 		name,
 		description,
 		link,
@@ -928,6 +973,20 @@ func init() {
 	description = "The system generates core dump files (for example, crash dump files) automatically. Runtime (RTE) dump files can be triggered explicitly, for example by using the SAP HANA database management console (hdbcons) or as part of a full system information dump (fullSystemInfoDump.py). Dump files are stored in the trace directory and have the same access permissions as other trace files (see above). Runtime dump files created as part of a full system information dump can be retrieved by users with the EXECUTE privilege on the procedure SYS.FULL_SYSTEM_INFO_DUMP_RETRIEVE. At operating system level, any user in the SAPSYS group can access their storage location: /usr/sap/SID/SYS/global/sapcontrol/snapshots"
 	link = "https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-security-guide/recommendations-for-trace-and-dump-files#dump-files"
 	recommendation = "- Generate runtime dump files to analyze specific error situations only, typically at the request of SAP support.\n- Delete dump files that are no longer needed."
+	CheckList = append(CheckList, newCheck(
+		Query,
+		name,
+		description,
+		link,
+		recommendation,
+		dumpFiles,
+		[]string{},
+	))
+	//////////////////////////////////////////////////////////////////////////////
+	/* name = "DumpFilesSSH"
+	description = "The system generates core dump files (for example, crash dump files) automatically. Runtime (RTE) dump files can be triggered explicitly, for example by using the SAP HANA database management console (hdbcons) or as part of a full system information dump (fullSystemInfoDump.py). Dump files are stored in the trace directory and have the same access permissions as other trace files (see above). Runtime dump files created as part of a full system information dump can be retrieved by users with the EXECUTE privilege on the procedure SYS.FULL_SYSTEM_INFO_DUMP_RETRIEVE. At operating system level, any user in the SAPSYS group can access their storage location: /usr/sap/SID/SYS/global/sapcontrol/snapshots"
+	link = "https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-security-guide/recommendations-for-trace-and-dump-files#dump-files"
+	recommendation = "- Generate runtime dump files to analyze specific error situations only, typically at the request of SAP support.\n- Delete dump files that are no longer needed."
 	command := fmt.Sprintf(dumpFiles, config.Conf.Instance.SID)
 	CheckList = append(CheckList, newCheck(
 		Command,
@@ -937,5 +996,5 @@ func init() {
 		recommendation,
 		command,
 		[]string{},
-	))
+	)) */
 }

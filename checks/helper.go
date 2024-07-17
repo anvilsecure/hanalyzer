@@ -81,6 +81,7 @@ func ExecuteQueries() {
 		}
 	}
 }
+
 func newCheck(checkType CheckType, name, description, link, recommendation, control string, parameters []string) *Check {
 	if name == "" || control == "" {
 		log.Fatalf("Query creation failed. Name and Query fields required.")

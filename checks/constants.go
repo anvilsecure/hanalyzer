@@ -59,10 +59,13 @@ const (
 	passwordHashMethods                  string = `SELECT * FROM "PUBLIC"."M_INIFILE_CONTENTS" WHERE FILE_NAME = 'global.ini' AND SECTION = 'authentication' AND KEY = 'password_hash_methods'`
 	rootEncryptionKeys                   string = `SELECT ROOT_KEY_TYPE,COUNT(CREATE_TIMESTAMP) AS Versions,MIN(TO_SECONDDATE(CREATE_TIMESTAMP)) AS CREATION_DATE, MAX(TO_SECONDDATE(CREATE_TIMESTAMP)) AS LAST_VERSION_DATE FROM ENCRYPTION_ROOT_KEYS WHERE ROOT_KEY_STATUS IN ('ACTIVE','DEACTIVATED') GROUP BY ROOT_KEY_TYPE`
 	dataAndLogVolumeEncryption           string = `SELECT SCOPE,IS_ENCRYPTION_ACTIVE FROM M_ENCRYPTION_OVERVIEW`
+	_pre_0_TraceFiles                    string = `SELECT VIEW_NAME FROM SYS.VIEWS WHERE VIEW_NAME = 'M_TRACEFILES';`
+	traceFiles                           string = `SELECT * FROM SYS.M_TRACEFILES`
+	dumpFiles                            string = `SELECT * FROM SYS.FULL_SYSTEM_INFO_DUMPS`
 	// SSH commands
 	encryptionKeySAPHANASecureUserStore string = `hdbuserstore list`
-	traceFiles                          string = `hdbsqldbc_cons SHOW ALL`
-	dumpFiles                           string = `ls -l /usr/sap/%s/SYS/global/sapcontrol/snapshots`
+	traceFilesCommand                   string = `hdbsqldbc_cons SHOW ALL`
+	dumpFilesSSH                        string = `ls -l /usr/sap/%s/SYS/global/sapcontrol/snapshots`
 )
 
 type Duration struct {

@@ -64,7 +64,7 @@ instance:
 
 ### [Recommendations for Trace and Dump Files](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/9630172f36564ee5ba26c13c054a35e1.html?locale=en-US&version=2.12.0.0)
 - [x] Trace Files
-- [ ] Dump Files
+- [x] Dump Files
 
 ### [Recommendations for Tenant Database Management](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/a6e033bd909948d5b12caeb2ceba20d4.html?locale=en-US&version=2.12.0.0)
 - [ ] SAML-Based User Authentication
