@@ -2,6 +2,7 @@ package checks
 
 import (
 	"fmt"
+	"hana/logger"
 	"hana/utils"
 	"log"
 	"os"
@@ -521,15 +522,10 @@ func EvaluateResults(checkType CheckType) {
 					log.Fatalln("No customizable functionalities found. SAP Hana usually has default customizable functionalities. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_CUSTOMIZABLE_FUNCTIONALITIES\"`")
 				}
 			default:
-				utils.Error("Unknown check name %s\n", check.Name)
+				logger.Log.Errorf("Unknown check name %s\n", check.Name)
 				os.Exit(1)
 			}
 			fmt.Println("-----------")
-			/* for _, r := range check.Results {
-				for key, val := range r {
-					fmt.Printf("%s: %s\n", key, val)
-				}
-			} */
 		} else if check.Type == SSHType {
 			utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
@@ -541,14 +537,9 @@ func EvaluateResults(checkType CheckType) {
 					utils.Error("[!] Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n")
 				}
 			default:
-				utils.Error("Unknown check name %s\n", check.Name)
+				logger.Log.Errorf("Unknown check name %s\n", check.Name)
 				os.Exit(1)
 			}
-			/* for _, r := range check.Results {
-				for key, val := range r {
-					fmt.Printf("%s: %s\n", key, val)
-				}
-			} */
 			fmt.Println("-----------")
 		}
 	}
