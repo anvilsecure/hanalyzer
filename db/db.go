@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"hana/config"
+	"hana/logger"
 	"log"
+	"os"
 
 	_ "github.com/SAP/go-hdb/driver"
 )
@@ -17,32 +19,57 @@ type Database struct {
 type Results []map[string]interface{}
 
 var (
+	host         string = config.Conf.Host
 	dbConfig     config.DBConfig
 	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
 	hdbDsn       string
 	DB           *Database
 	sqlDB        *sql.DB
+	username     string
+	password     string
 )
 
 const (
 	DRIVERNAME = "hdb"
 )
 
-func init() {
-	dbConfig = config.Conf.Database
+func validateDBConfiguration() error {
+	conf := config.Conf
+	if conf.Host == "" {
+		return fmt.Errorf("empty host provided for DB connection")
+	}
+	if conf.SID == "" {
+		return fmt.Errorf("empty DB SID provided for DB connection")
+	}
+	dbConfig = conf.Database
+	if dbConfig.Username == "" {
+		return fmt.Errorf("empty username provided for DB connection")
+	}
+	if dbConfig.Password == "" {
+		return fmt.Errorf("empty password provided for DB connection")
+	}
+	host = conf.Host
+	username = dbConfig.Username
+	password = dbConfig.Password
+	return nil
+}
+
+func Config() {
+	if err := validateDBConfiguration(); err != nil {
+		logger.Log.Errorf("configuration validation error: %s\n", err.Error())
+		os.Exit(1)
+	}
 	hdbDsn = fmt.Sprintf(
 		hdbDsnFormat,
-		dbConfig.Username,
-		dbConfig.Password,
-		dbConfig.Host,
+		username,
+		password,
+		host,
 		dbConfig.Port,
 	)
 	err := connect()
 	if err != nil {
 		log.Panic(err)
 	}
-	//fmt.Println(sqlDB)
-	//defer sqlDB.Close()
 }
 
 func connect() error {
@@ -77,7 +104,6 @@ func Query(q string) Results {
 	for i := 0; i < len(colNames); i++ {
 		colPtrs[i] = &cols[i]
 	}
-	//fmt.Printf("\nRes before rows.Next(): %v\n\n", res)
 	counter := 0
 	for rows.Next() {
 		err = rows.Scan(colPtrs...)
@@ -89,10 +115,7 @@ func Query(q string) Results {
 			myMap[colNames[i]] = col
 		}
 		res = append(res, myMap)
-		//fmt.Println(myMap)
-		//fmt.Printf("Res at iteration #%d: %v\n\n\n", counter, res)
 		counter++
 	}
-	//fmt.Println(res)
 	return res
 }

@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -55,28 +56,35 @@ func prepareAndExecute(check *Check) {
 	check.Results = res
 }
 
-func ExecuteQueries() {
+func ExecuteChecks(checkType CheckType) {
 	for _, check := range CheckList {
-		switch check.Type {
-		case Query:
-			if len(check.Parameters) == 0 {
-				check.Results = executeQuery(check.Control)
-			} else {
-				prepareAndExecute(check)
-			}
-		case Command:
-			stdOut, stdErr, err := ssh.ExecCommand(check.Control)
-			var sshErr *ssh.SSHError
-			if err != nil && !errors.As(err, &sshErr) {
-				log.Println(err)
-			}
-			if err != nil && errors.As(err, &sshErr) {
-				check.Results = []map[string]interface{}{
-					{"stdOut": stdOut, "stdErr": stdErr, "err": sshErr},
+		if check.Type == checkType {
+			switch check.Type {
+			case QueryType:
+				if len(check.Parameters) == 0 {
+					if check.Name == "CriticalCombinations" {
+						getAllUsers()
+						p := "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
+						check.Control = fmt.Sprintf(criticalCombinations, p)
+					}
+					check.Results = executeQuery(check.Control)
+				} else {
+					prepareAndExecute(check)
 				}
-			}
-			check.Results = []map[string]interface{}{
-				{"stdOut": stdOut, "stdErr": stdErr, "err": fmt.Errorf("")},
+			case SSHType:
+				stdOut, stdErr, err := ssh.ExecCommand(check.Control)
+				var sshErr *ssh.SSHError
+				if err != nil && !errors.As(err, &sshErr) {
+					log.Println(err)
+				}
+				if err != nil && errors.As(err, &sshErr) {
+					check.Results = []map[string]interface{}{
+						{"stdOut": stdOut, "stdErr": stdErr, "err": sshErr},
+					}
+				}
+				check.Results = []map[string]interface{}{
+					{"stdOut": stdOut, "stdErr": stdErr, "err": fmt.Errorf("")},
+				}
 			}
 		}
 	}
@@ -84,7 +92,7 @@ func ExecuteQueries() {
 
 func newCheck(checkType CheckType, name, description, link, recommendation, control string, parameters []string) *Check {
 	if name == "" || control == "" {
-		log.Fatalf("Query creation failed. Name and Query fields required.")
+		log.Fatalf("Query creation failed. Name and Control fields required.")
 	}
 	return &Check{
 		Type:           checkType,

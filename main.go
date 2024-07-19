@@ -1,10 +1,9 @@
 package main
 
 import (
-	"hana/checks"
+	"hana/cmd"
 )
 
 func main() {
-	checks.ExecuteQueries()
-	checks.EvaluateResults()
+	cmd.Execute()
 }

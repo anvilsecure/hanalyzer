@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"hana/config"
 	"log"
+	"net"
+	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -19,11 +21,11 @@ type SSHCreds struct {
 	Password string `yaml:"password"`
 }
 
-func init() {
+func Config() {
 	var sshConfig *ssh.ClientConfig
 	sshCreds = SSHCreds{
-		Username: config.Conf.Host.Username,
-		Password: config.Conf.Host.Password,
+		Username: config.Conf.SSH.Username,
+		Password: config.Conf.SSH.Password,
 	}
 	if sshCreds.Username != "" && sshCreds.Password != "" {
 		// Set up the SSH connection
@@ -39,7 +41,8 @@ func init() {
 	}
 
 	var err error
-	SSHClient, err = ssh.Dial("tcp", "hxehost:22", sshConfig)
+	sshHost := net.JoinHostPort(config.Conf.Host, strconv.Itoa(config.Conf.SSH.Port))
+	SSHClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

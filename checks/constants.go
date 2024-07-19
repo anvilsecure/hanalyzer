@@ -7,8 +7,8 @@ import (
 type CheckType string
 
 const (
-	Query   CheckType = "query"
-	Command CheckType = "command"
+	QueryType CheckType = "query"
+	SSHType   CheckType = "ssh"
 )
 
 type Results []map[string]interface{}
