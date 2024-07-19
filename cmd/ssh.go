@@ -20,7 +20,7 @@ var (
 
 var sshCmd = &cobra.Command{
 	Use:   "ssh",
-	Short: "Use ssh to perform the following checks on the DB server:\n\t\t\t- Encryption Key of the SAP HANA Secure User Store",
+	Short: "Use SSH to perform the following checks on the DB server:\n\t\t\t- Encryption Key of the SAP HANA Secure User Store",
 	Run: func(cmd *cobra.Command, args []string) {
 		checkType := checks.SSHType
 		if err := validateSSHFlags(); err != nil {

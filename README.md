@@ -1,20 +1,159 @@
 <img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
 
+# Goal
+This tool was designed to analyze configuration of SAP HANA instances and compare it with official security guidelines.
+
+# How to use it
+
+## Modes
+
+There are two possible mode of analysis
+* querying the DB (36 checks)
+* invoking commands via SSH on the DB server (1 check)
+
+> If possible we try to perform checks by querying the DB, to avoid requiring SSH access.
+The only check that was not possible to implement via query is [Encryption Key of the SAP HANA Secure User Store](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?version=2.12.0.0#encryption-key-of-the-sap-hana-secure-user-store-(hdbuserstore)).
+
+```bash
+$ saphanalyzer -h
+Tool to analyze SAP Hana database configuration against official SAP guidelines.
+
+Usage:
+  saphanalyzer [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  query       Perform checks by querying the DB.
+  ssh         Use ssh to perform the following checks on the DB server:
+                        - Encryption Key of the SAP HANA Secure User Store
+
+Flags:
+  -h, --help   help for saphanalyzer
+
+Use "saphanalyzer [command] --help" for more information about a command.
+```
+
+### Query mode
+Most of the checks are performed via DB queries.
+
+```bash
+$ saphanalyzer -h
+Perform checks by querying the DB.
+
+Usage:
+  saphanalyzer query [flags]
+
+Flags:
+      --conf string          Provide configuration file (required if --host, --db-port, --db-username, --db-password, and --sid are not provided by CLI)
+      --db-password string   Database password
+      --db-port int          Database port (default 39015)
+      --db-username string   Database username
+  -h, --help                 help for query
+      --host string          Database host
+      --sid string           Instance SID
+```
+
+You can use a configuration file (`--conf <file.yml>`) or provide the required parameters via flag ([Query mode examples](#query-mode-examples)).
+
+
+### SSH mode
+One check is performed by issuing a command via SSH.
+
+```bash
+$ saphanalyzer -h
+Use SSH to perform the following checks on the DB server:
+                        - Encryption Key of the SAP HANA Secure User Store
+
+Usage:
+  saphanalyzer ssh [flags]
+
+Flags:
+      --conf string           Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)
+  -h, --help                  help for ssh
+      --host string           Database host
+      --ssh-password string   SSH password
+      --ssh-port int          SSH username (default 22)
+      --ssh-username string   SSH username
+```
+
+You can use a configuration file (`--conf <file.yml>`) or provide the required parameters via flag ([SSH mode examples](#ssh-mode-examples)).
+
+### Examples
+#### Query mode examples
+Using a [configuration file](#configuration-file)
+```bash
+$ saphanalyzer query --conf .\conf.yml
+Check: CheckSystemUser
+[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
+Last successful connection was in date 2024-07-19 15:19:46.
+-----------
+Check: CheckPasswordLifetime
+[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).
+  - SYS
+  - SYSTEM
+  - SAPDBCTRL
+  - TEL_ADMIN
+-----------
+Check: SystemPrivileges
+[!] Please review the following entities (users/roles) because they might have too high privileges:
+[I] Breakdown per grantee
+......
+```
+
+Using CLI parameters
+```bash
+$ saphanalyzer query --host <hostname/IP_address> --sid <SID> --db-username <DBUsername> --db-password <DBPassword>
+Check: CheckSystemUser
+[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
+Last successful connection was in date 2024-07-19 15:19:46.
+-----------
+Check: CheckPasswordLifetime
+[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).
+  - SYS
+  - SYSTEM
+  - SAPDBCTRL
+  - TEL_ADMIN
+-----------
+Check: SystemPrivileges
+[!] Please review the following entities (users/roles) because they might have too high privileges:
+[I] Breakdown per grantee
+......
+```
+
+#### SSH mode examples
+Using a [configuration file](#configuration-file)
+```bash
+$ saphanalyzer ssh --conf .\conf.yml
+Check: CheckSystemUser
+Check: EncryptionKeySAPHANASecureUserStore
+[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
+-----------
+```
+
+Using CLI parameters
+```bash
+$ saphanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername> --ssh-password <DBPassword>
+Check: EncryptionKeySAPHANASecureUserStore
+[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
+```
+
 # Configuration file
 
 In the project root create the following `conf.yml` file
 
 ```yml
+host: HOST_NAME
+sid: DB_SID
 database:
-  host: HOST_NAME
   port: PORT
   username: USERNAME (e.g., system)
   password: PASSWORD
-host:
+ssh:
+  port: PORT
   username: USERNAME (e.g., hxeadm)
   password: PASSWORD
-instance:
-  sid: DB_SID
+
 ```
 
 
