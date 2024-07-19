@@ -44,6 +44,11 @@ var queryCmd = &cobra.Command{
 		checks.CreateChecks(checkType)
 		checks.ExecuteChecks(checkType)
 		checks.EvaluateResults(checkType)
+		for _, check := range checks.CheckList {
+			if check.Error != nil {
+				logger.Log.Warnf("error occurred to check \"%s\": %s\n", check.Name, check.Error.Error())
+			}
+		}
 	},
 }
 

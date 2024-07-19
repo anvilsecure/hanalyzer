@@ -87,17 +87,17 @@ func connect() error {
 	return err
 }
 
-func Query(q string) Results {
+func Query(q string) (Results, error) {
 	var res Results
 	rows, err := sqlDB.Query(q)
-	defer rows.Close()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+	defer rows.Close()
 	// get the column names from the query
 	colNames, err := rows.Columns()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	cols := make([]interface{}, len(colNames))
 	colPtrs := make([]interface{}, len(colNames))
@@ -108,7 +108,7 @@ func Query(q string) Results {
 	for rows.Next() {
 		err = rows.Scan(colPtrs...)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		var myMap = make(map[string]interface{})
 		for i, col := range cols {
@@ -117,5 +117,5 @@ func Query(q string) Results {
 		res = append(res, myMap)
 		counter++
 	}
-	return res
+	return res, nil
 }

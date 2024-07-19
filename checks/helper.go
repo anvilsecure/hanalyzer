@@ -4,17 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"hana/db"
+	"hana/logger"
 	"hana/ssh"
-	"hana/utils"
 	"log"
-	"os"
 	"reflect"
 	"strings"
 	"time"
 )
 
-func executeQuery(query string) (results Results) {
-	res := db.Query(query)
+func executeQuery(query string) (Results, error) {
+	var results Results
+	res, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
 	// Do something with the map
 	for _, r := range res {
 		var resMap = make(map[string]interface{})
@@ -40,20 +43,24 @@ func executeQuery(query string) (results Results) {
 		}
 		results = append(results, resMap)
 	}
-	return
+	return results, nil
 }
 
-func prepareAndExecute(check *Check) {
+func prepareAndExecute(check *Check) error {
 	if len(check.Parameters) > 1 {
-		utils.Error("We aren't ready yet to prepare statements w/ mutiple parameters :[")
-		os.Exit(1)
+		return fmt.Errorf("we are currently not supporting multiple parameters")
 	}
 	var res Results
+	var err error
 	for _, p := range check.Parameters {
 		stmt := fmt.Sprintf(check.Control, p)
-		res = executeQuery(stmt)
+		res, err = executeQuery(stmt)
+		if err != nil {
+			return err
+		}
 	}
 	check.Results = res
+	return nil
 }
 
 func ExecuteChecks(checkType CheckType) {
@@ -63,13 +70,20 @@ func ExecuteChecks(checkType CheckType) {
 			case QueryType:
 				if len(check.Parameters) == 0 {
 					if check.Name == "CriticalCombinations" {
-						getAllUsers()
+						err := getAllUsers()
+						if err != nil {
+							check.Error = err
+							break
+						}
 						p := "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
 						check.Control = fmt.Sprintf(criticalCombinations, p)
 					}
-					check.Results = executeQuery(check.Control)
+					check.Results, check.Error = executeQuery(check.Control)
 				} else {
-					prepareAndExecute(check)
+					if err := prepareAndExecute(check); err != nil {
+						check.Error = err
+						break
+					}
 				}
 			case SSHType:
 				stdOut, stdErr, err := ssh.ExecCommand(check.Control)
@@ -116,12 +130,16 @@ func isPredefined(user string) bool {
 	return false
 }
 
-func getAllUsers() {
-	results := db.Query(`Select USER_NAME from "SYS"."USERS";`)
+func getAllUsers() error {
+	results, err := db.Query(`Select USER_NAME from "SYS"."USERS";`)
+	if err != nil {
+		return err
+	}
 	for _, r := range results {
 		userName := string(r["USER_NAME"].([]uint8))
 		userNames = append(userNames, userName)
 	}
+	return nil
 }
 
 func contains(s []string, e string) bool {
@@ -164,8 +182,11 @@ func difference(a, b []string) []string {
 	return diff
 }
 
-func (check *Check) listGrantees() map[string]entity {
+func (check *Check) listGrantees() (map[string]entity, error) {
 	grantees := make(map[string]entity)
+	if check.checkEmptyResult() {
+		return nil, fmt.Errorf("empty result set for grantee list")
+	}
 	for _, r := range check.Results {
 		user := r["GRANTEE"].(string)
 		grantees[user] = entity{
@@ -174,7 +195,7 @@ func (check *Check) listGrantees() map[string]entity {
 			Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
 		}
 	}
-	return grantees
+	return grantees, nil
 }
 
 func printGrantees(grantees map[string]entity) {
@@ -190,4 +211,15 @@ func getCheckByName(name string) (*Check, error) {
 		}
 	}
 	return nil, fmt.Errorf("no check found with name %s", name)
+}
+
+// checkEmptyResult function checks if the result set of the executed Check is empty or not
+
+func (check *Check) checkEmptyResult() bool {
+	if len(check.Results) == 0 {
+		logger.Log.Warnf("%s check returned empty result set\n", check.Name)
+		SkippedChecks = append(SkippedChecks, check)
+		return true
+	}
+	return false
 }

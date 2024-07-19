@@ -12,6 +12,10 @@ import (
 	"gopkg.in/agrison/go-tablib.v1"
 )
 
+var (
+	SkippedChecks []*Check
+)
+
 func EvaluateResults(checkType CheckType) {
 	for _, check := range CheckList {
 		if check.Type == QueryType {
@@ -21,45 +25,57 @@ func EvaluateResults(checkType CheckType) {
 			utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
 			case "CheckSystemUser":
-				if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
-					utils.Ok(
-						"[+] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
-						check.Results[0]["USER_DEACTIVATED"],
-					)
-					utils.Info(
-						"It was deactivated in date %s and last successful connection was in date %s.\n",
-						check.Results[0]["DEACTIVATION_TIME"],
-						check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
-					)
+				if check.checkEmptyResult() {
+					check.Error = fmt.Errorf("Possible error: no user found. Please check it manually.\n")
 				} else {
-					utils.Error(
-						"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
-						check.Results[0]["USER_DEACTIVATED"],
-					)
-					utils.Info(
-						"Last successful connection was in date %s.\n",
-						check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
-					)
+					if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
+						utils.Ok(
+							"[+] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
+							check.Results[0]["USER_DEACTIVATED"],
+						)
+						utils.Info(
+							"It was deactivated in date %s and last successful connection was in date %s.\n",
+							check.Results[0]["DEACTIVATION_TIME"],
+							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
+						)
+					} else {
+						utils.Error(
+							"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
+							check.Results[0]["USER_DEACTIVATED"],
+						)
+						utils.Info(
+							"Last successful connection was in date %s.\n",
+							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
+						)
+					}
 				}
 			case "CheckPasswordLifetime":
 				var users []map[string]interface{}
-				utils.Error("[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n")
-				for _, r := range check.Results {
-					user := r["USER_NAME"].(string)
-					if (isPredefined(user) && strings.HasPrefix(user, "_SYS_")) || strings.HasPrefix(user, "XSSQLCC_AUTO_USER_") {
-						continue
+				if check.checkEmptyResult() {
+					utils.Ok("[+] No user found with password lifetime disabled.\n")
+				} else {
+					utils.Error("[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n")
+					for _, r := range check.Results {
+						user := r["USER_NAME"].(string)
+						if (isPredefined(user) && strings.HasPrefix(user, "_SYS_")) || strings.HasPrefix(user, "XSSQLCC_AUTO_USER_") {
+							continue
+						}
+						users = append(users, r)
 					}
-					users = append(users, r)
-				}
-				for _, u := range users {
-					fmt.Println("  -", u["USER_NAME"].(string))
+					for _, u := range users {
+						fmt.Println("  -", u["USER_NAME"].(string))
+					}
 				}
 			case "SystemPrivileges":
 				if len(check.Results) > 0 {
 					privileges := make(map[string][]entity)
 					utils.Error("[!] Please review the following entities (users/roles) because they might have too high privileges:\n")
 					utils.Info("[I] Breakdown per grantee\n")
-					grantees := check.listGrantees()
+					grantees, err := check.listGrantees()
+					if err != nil {
+						check.Error = err
+						break
+					}
 					for k, grantee := range grantees {
 						fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
 						for _, p := range grantee.Privileges {
@@ -124,7 +140,11 @@ func EvaluateResults(checkType CheckType) {
 			case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment", "AnalyticPrivilege", "DebugPrivilege":
 				if len(check.Results) > 0 {
 					utils.Error("[!] The following users/roles have %s privilege:\n", check.Parameters[0])
-					grantees := check.listGrantees()
+					grantees, err := check.listGrantees()
+					if err != nil {
+						check.Error = err
+						break
+					}
 					printGrantees(grantees)
 				} else {
 					utils.Ok("[+] No user/role has %s privilege.\n", check.Parameters[0])
