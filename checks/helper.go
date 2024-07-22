@@ -117,7 +117,7 @@ func newCheck(checkType CheckType, name, description, link, recommendation, cont
 		Control:        control,
 		Parameters:     parameters,
 		Results:        Results{},
-		Result:         false,
+		IssuesPresent:  false,
 	}
 }
 
@@ -198,10 +198,12 @@ func (check *Check) listGrantees() (map[string]entity, error) {
 	return grantees, nil
 }
 
-func printGrantees(grantees map[string]entity) {
+func printGrantees(grantees map[string]entity) string {
+	out := ""
 	for k, grantee := range grantees {
-		fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+		out += fmt.Sprintf("  - %s (entity type: %s)\n", k, grantee.Type)
 	}
+	return out
 }
 
 func getCheckByName(name string) (*Check, error) {
@@ -218,7 +220,6 @@ func getCheckByName(name string) (*Check, error) {
 func (check *Check) checkEmptyResult() bool {
 	if len(check.Results) == 0 {
 		logger.Log.Warnf("%s check returned empty result set\n", check.Name)
-		SkippedChecks = append(SkippedChecks, check)
 		return true
 	}
 	return false

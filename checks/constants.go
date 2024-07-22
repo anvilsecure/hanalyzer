@@ -22,8 +22,9 @@ type Check struct {
 	Control        string
 	Results        Results
 	Parameters     []string
-	Result         bool
+	IssuesPresent  bool
 	Error          error
+	Out            string
 }
 
 type entity struct {

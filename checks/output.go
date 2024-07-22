@@ -1,0 +1,97 @@
+package checks
+
+import (
+	"encoding/json"
+	"hana/config"
+	"hana/logger"
+)
+
+/*
+{
+    "server_ip": "<IP_address_string>",
+    "server_port": 123,
+    "sid": "<sid>",
+    "executed_checks":
+    [
+        "check_name_#1",
+        "check_name_#2"
+    ],
+    "skipped_checks":
+    [
+        "check_name_#3",
+        "check_name_#4"
+    ],
+    "results":
+    [
+        {
+            "check_name": "<check_name_#1>",
+            "errors": false,
+			"error_list":[],
+            "issues": true,
+            "result": "<base64 encoded string>"
+        },
+        {
+            "check_name": "<check_name_#2>",
+            "errors": true,
+			"error_list":[
+				"check_error_#1",
+				"check_error_#2"
+			],
+            "issues": false,
+            "result": ""
+        }
+    ]
+}
+*/
+
+var Out *Output = &Output{}
+
+type Result struct {
+	CheckName string   `json:"check_name"`
+	Errors    bool     `json:"errors"`
+	ErrorList []string `json:"error_list"`
+	Issues    bool     `json:"issues"`
+	Result    string   `json:"result"`
+}
+
+type Output struct {
+	ServerIP       string   `json:"server_ip"`
+	ServerPort     int      `json:"server_port"`
+	Sid            string   `json:"sid"`
+	ExecutedChecks []string `json:"executed_checks"`
+	SkippedChecks  []string `json:"skipped_checks"`
+	Results        []Result `json:"results"`
+}
+
+func CollectOutput() {
+	Out.ServerIP = config.Conf.Host
+	Out.ServerPort = config.Conf.Database.Port
+	Out.Sid = config.Conf.SID
+	for _, check := range CheckList {
+		if check.Error != nil {
+			Out.SkippedChecks = append(Out.SkippedChecks, check.Name)
+			Out.Results = append(Out.Results, Result{
+				CheckName: check.Name,
+				Errors:    true,
+				ErrorList: []string{check.Error.Error()},
+				Issues:    false,
+				Result:    "",
+			})
+		} else {
+			Out.Results = append(Out.Results, Result{
+				CheckName: check.Name,
+				Errors:    false,
+				ErrorList: []string{},
+				Issues:    true,
+				Result:    check.Out,
+			})
+		}
+	}
+	jsonData, err := json.MarshalIndent(Out, "", "  ")
+	if err != nil {
+		logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
+		return
+	}
+
+	logger.Log.Debugf("\n%s\n", jsonData)
+}

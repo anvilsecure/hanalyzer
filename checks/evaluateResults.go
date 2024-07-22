@@ -18,6 +18,12 @@ var (
 
 func EvaluateResults(checkType CheckType) {
 	for _, check := range CheckList {
+		var message, info string
+		var issuesPresent = false
+		if check.Error != nil {
+			logger.Log.Warnf("error during execution of check \"%s\": %s", check.Name, check.Error.Error())
+			continue
+		}
 		if check.Type == QueryType {
 			if strings.HasPrefix(check.Name, "_pre_") {
 				continue
@@ -26,35 +32,38 @@ func EvaluateResults(checkType CheckType) {
 			switch check.Name {
 			case "CheckSystemUser":
 				if check.checkEmptyResult() {
-					check.Error = fmt.Errorf("Possible error: no user found. Please check it manually.\n")
+					check.Error = fmt.Errorf("possible error: no user found. Please check it manually")
 				} else {
 					if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
-						utils.Ok(
+						message = fmt.Sprintf(
 							"[+] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
 							check.Results[0]["USER_DEACTIVATED"],
 						)
-						utils.Info(
-							"It was deactivated in date %s and last successful connection was in date %s.\n",
+						info = fmt.Sprintf(
+							"It was deactivated in date %s and last successful connection was in date %s.",
 							check.Results[0]["DEACTIVATION_TIME"],
 							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
 						)
+						issuesPresent = false
 					} else {
-						utils.Error(
+						message = fmt.Sprintf(
 							"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
 							check.Results[0]["USER_DEACTIVATED"],
 						)
-						utils.Info(
-							"Last successful connection was in date %s.\n",
+						info = fmt.Sprintf(
+							"Last successful connection was in date %s.",
 							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
 						)
+						issuesPresent = true
 					}
 				}
 			case "CheckPasswordLifetime":
 				var users []map[string]interface{}
 				if check.checkEmptyResult() {
-					utils.Ok("[+] No user found with password lifetime disabled.\n")
+					message = "[+] No user found with password lifetime disabled."
+					issuesPresent = false
 				} else {
-					utils.Error("[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n")
+					message = "[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n"
 					for _, r := range check.Results {
 						user := r["USER_NAME"].(string)
 						if (isPredefined(user) && strings.HasPrefix(user, "_SYS_")) || strings.HasPrefix(user, "XSSQLCC_AUTO_USER_") {
@@ -63,37 +72,39 @@ func EvaluateResults(checkType CheckType) {
 						users = append(users, r)
 					}
 					for _, u := range users {
-						fmt.Println("  -", u["USER_NAME"].(string))
+						info += fmt.Sprintf("  - %s\n", u["USER_NAME"].(string))
 					}
+					issuesPresent = true
 				}
 			case "SystemPrivileges":
 				if len(check.Results) > 0 {
-					privileges := make(map[string][]entity)
-					utils.Error("[!] Please review the following entities (users/roles) because they might have too high privileges:\n")
-					utils.Info("[I] Breakdown per grantee\n")
 					grantees, err := check.listGrantees()
 					if err != nil {
 						check.Error = err
 						break
 					}
+					issuesPresent = true
+					privileges := make(map[string][]entity)
+					message = "[!] Please review the following entities (users/roles) because they might have too high privileges:\n"
+					info = "[I] Breakdown per grantee\n"
 					for k, grantee := range grantees {
-						fmt.Printf("  - %s (entity type: %s)\n", k, grantee.Type)
+						info += fmt.Sprintf("  - %s (entity type: %s)\n", k, grantee.Type)
 						for _, p := range grantee.Privileges {
-							fmt.Println("    - ", p)
+							info += fmt.Sprintf("    - %s\n", p)
 						}
 						for _, p := range grantee.Privileges {
 							privileges[p] = append(privileges[p], grantee)
 						}
 					}
-					utils.Info("[I] Breakdown per privilege\n")
+					info += "[I] Breakdown per privilege\n"
 					for privilege, entities := range privileges {
-						fmt.Printf("  - %s\n", privilege)
+						info += fmt.Sprintf("  - %s\n", privilege)
 						for _, entity := range entities {
-							fmt.Printf("    - %s (type: %s)\n", entity.Name, entity.Type)
+							info += fmt.Sprintf("    - %s (type: %s)\n", entity.Name, entity.Type)
 						}
 					}
 				} else {
-					utils.Ok("[+] No privilege was found to be reviewed.\n")
+					message = "[+] No privilege was found to be reviewed.\n"
 				}
 			case "CriticalCombinations":
 				users := make(map[string]entity)
@@ -116,14 +127,15 @@ func EvaluateResults(checkType CheckType) {
 					}
 				}
 				if len(issues) > 0 {
-					utils.Error("[!] The following users have dangerous privileges combinations.\n")
+					issuesPresent = true
+					message = "[!] The following users have dangerous privileges combinations.\n"
 					var printed []string
 					for _, i := range issues {
-						fmt.Println("  - ", i.Name)
+						info += fmt.Sprintf("  - %s\n", i.Name)
 						for _, p := range i.Privileges {
 							for _, couple := range DANGEROUS_COMBO {
 								if contains(couple, p) {
-									fmt.Printf("    - %s\n", utils.Red(p))
+									info += fmt.Sprintf("    - %s\n", utils.Red(p))
 									printed = append(printed, p)
 									break
 								}
@@ -131,27 +143,31 @@ func EvaluateResults(checkType CheckType) {
 						}
 						notPrinted := difference(i.Privileges, printed)
 						for _, p := range notPrinted {
-							fmt.Printf("    - %s\n", p)
+							info += fmt.Sprintf("    - %s\n", p)
 						}
 					}
 				} else {
-					utils.Ok("[+] No dangerous privilege combinations found.\n")
+					issuesPresent = false
+					message = "[+] No dangerous privilege combinations found.\n"
 				}
 			case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment", "AnalyticPrivilege", "DebugPrivilege":
 				if len(check.Results) > 0 {
-					utils.Error("[!] The following users/roles have %s privilege:\n", check.Parameters[0])
+					issuesPresent = true
+					message = fmt.Sprintf("[!] The following users/roles have %s privilege:\n", check.Parameters[0])
 					grantees, err := check.listGrantees()
 					if err != nil {
 						check.Error = err
 						break
 					}
-					printGrantees(grantees)
+					info += printGrantees(grantees)
 				} else {
-					utils.Ok("[+] No user/role has %s privilege.\n", check.Parameters[0])
+					issuesPresent = false
+					message = fmt.Sprintf("[+] No user/role has %s privilege.", check.Parameters[0])
 				}
 			case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport", "PredefinedCatalogRepositoryRoles":
 				if len(check.Results) > 0 {
-					utils.Error("[!] The following users/roles have %s role:\n", check.Parameters[0])
+					issuesPresent = true
+					message = fmt.Sprintf("[!] The following users/roles have %s role:\n", check.Parameters[0])
 					grantees := make(map[string]entity)
 					for _, r := range check.Results {
 						user := r["GRANTEE"].(string)
@@ -161,53 +177,63 @@ func EvaluateResults(checkType CheckType) {
 							Privileges: append(grantees[user].Privileges, r["ROLE_NAME"].(string)),
 						}
 					}
-					printGrantees(grantees)
+					info += printGrantees(grantees)
 				} else {
-					utils.Ok("[+] No user/role has %s role.\n", check.Parameters[0])
+					issuesPresent = false
+					message = fmt.Sprintf("[+] No user/role has %s role.", check.Parameters[0])
 				}
 			case "UserParameterClient":
 				preCheckClient, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
+					check.Error = err
 					break
 				}
 				if len(preCheckClient.Results) == 0 {
-					utils.Ok("[+] secure_client_parameter in [authorization] section in global.ini is not set.\n")
+					issuesPresent = false
+					message = "[+] secure_client_parameter in [authorization] section in global.ini is not set.\n"
 				} else {
 					value := preCheckClient.Results[0]["VALUE"].(string)
 					if value == "true" {
-						utils.Ok("[!] secure_client_parameter in [authorization] section in global.ini is set to true.\n")
+						issuesPresent = false
+						message += "[!] secure_client_parameter in [authorization] section in global.ini is set to true.\n"
 					} else {
-						utils.Error("[!] secure_client_parameter in [authorization] section in global.ini is set to false\n")
+						issuesPresent = true
+						message += "[!] secure_client_parameter in [authorization] section in global.ini is set to false\n"
 					}
 				}
 				if len(check.Results) > 0 {
-					utils.Error("[!] Please review the following entities (users/roles) because they can change CLIENT user parameter:\n")
+					message += "[!] Please review the following entities (users/roles) because they can change CLIENT user parameter:\n"
 					for _, r := range check.Results {
-						fmt.Printf("  - %s (type: %s)\n", r["GRANTEE"], r["GRANTEE_TYPE"])
+						info += fmt.Sprintf("  - %s (type: %s)\n", r["GRANTEE"], r["GRANTEE_TYPE"])
 					}
 				} else {
-					utils.Ok("[+] No user/role can change the CLIENT user parameter.\n")
+					info += "[+] No user/role can change the CLIENT user parameter."
 				}
 			case "OSFSPermissions":
 				preCheckOS, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
+					check.Error = err
 					break
 				}
 				if len(preCheckOS.Results) == 0 {
-					utils.Error("[!] file_security in [import_export] section of indexserver.ini not set.\n")
+					issuesPresent = true
+					message = "[!] file_security in [import_export] section of indexserver.ini not set.\n"
 				} else {
 					value := preCheckOS.Results[0]["VALUE"].(string)
 					if value == "medium" || value == "high" {
-						utils.Ok("[+] file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
+						issuesPresent = false
+						message = fmt.Sprintf("[+] file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
 					} else {
-						utils.Error("[!] file_security set to LOW value for import/export in indexserver.ini.\n")
+						issuesPresent = true
+						message = "[!] file_security set to LOW value for import/export in indexserver.ini.\n"
 					}
 				}
 				if len(check.Results) > 0 {
 					grantees := make(map[string]entity)
-					utils.Error("[!] Please review the following entities (users/roles) because they have IMPORT/EXPORT privileges.\n")
+					issuesPresent = true
+					message += "[!] Please review the following entities (users/roles) because they have IMPORT/EXPORT privileges.\n"
 					for _, r := range check.Results {
 						grantee := r["GRANTEE"].(string)
 						grantees[grantee] = entity{
@@ -217,16 +243,13 @@ func EvaluateResults(checkType CheckType) {
 						}
 					}
 					for _, g := range grantees {
-						fmt.Printf("  - %s (type: %s): %s\n", g.Name, g.Type, strings.Join(g.Privileges, "/"))
+						info += fmt.Sprintf("  - %s (type: %s): %s\n", g.Name, g.Type, strings.Join(g.Privileges, "/"))
 					}
 				} else {
-					utils.Ok("[+] No user/role have IMPORT/EXPORT privileges.\n")
+					issuesPresent = false
+					message = "[+] No user/role have IMPORT/EXPORT privileges.\n"
 				}
-				utils.Warning("CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n")
-				fmt.Println("  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]")
-				fmt.Println("  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]")
-				fmt.Println("  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]")
-				fmt.Println("  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]")
+				info += "\nCAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]\n  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]\n  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]\n  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]\n"
 			case "Auditing":
 				preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
@@ -545,7 +568,20 @@ func EvaluateResults(checkType CheckType) {
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)
 				os.Exit(1)
 			}
-			fmt.Println("-----------")
+			check.Out = message + info
+			check.IssuesPresent = issuesPresent
+			if issuesPresent {
+				utils.Error(message)
+				if info != "" {
+					utils.Info(info)
+				}
+			} else {
+				utils.Ok(message)
+				if info != "" {
+					utils.Info(info)
+				}
+			}
+			fmt.Println("\n-----------")
 		} else if check.Type == SSHType {
 			utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
