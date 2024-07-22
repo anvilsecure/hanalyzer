@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"hana/config"
 	"hana/logger"
-	"log"
 	"os"
+	"time"
+
+	"github.com/theckman/yacspin"
 
 	_ "github.com/SAP/go-hdb/driver"
 )
@@ -66,22 +68,47 @@ func Config() {
 		host,
 		dbConfig.Port,
 	)
-	err := connect()
-	if err != nil {
-		log.Panic(err)
+	cfg := yacspin.Config{
+		Frequency:         100 * time.Millisecond,
+		CharSet:           yacspin.CharSets[78],
+		Suffix:            fmt.Sprintf(" connection in progress to %s:%d", host, dbConfig.Port),
+		SuffixAutoColon:   true,
+		StopCharacter:     "✓",
+		StopColors:        []string{"fgGreen"},
+		StopFailCharacter: "✗",
+		StopFailColors:    []string{"fgRed"},
 	}
+
+	spinner, err := yacspin.New(cfg)
+	if err != nil {
+		logger.Log.Error(err.Error())
+	}
+	if err = spinner.Start(); err != nil {
+		logger.Log.Error(err.Error())
+	}
+	if err := connect(); err != nil {
+		if spinnerErr := spinner.StopFail(); spinnerErr != nil {
+			logger.Log.Error(spinnerErr.Error())
+			os.Exit(1)
+		}
+		logger.Log.Error(err.Error())
+		logger.Log.CloseFile()
+		os.Exit(1)
+	}
+	if err = spinner.Stop(); err != nil {
+		logger.Log.Error(err.Error())
+	}
+	logger.Log.Infof("Connection successful to %s:%d", host, dbConfig.Port)
 }
 
 func connect() error {
 	var err error
 	sqlDB, err = sql.Open(DRIVERNAME, hdbDsn)
 	if err != nil {
-		log.Panic(err)
 		return err
 	}
 
 	if err := sqlDB.Ping(); err != nil {
-		log.Panic(err)
 		return err
 	}
 	return err
