@@ -5,3 +5,4 @@ conf.yml
 replace-text.txt
 ssh.conf.yaml
 build/**
+saphanalyzer_warnings_*
