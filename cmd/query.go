@@ -47,6 +47,7 @@ var queryCmd = &cobra.Command{
 		for _, check := range checks.CheckList {
 			if check.Error != nil {
 				logger.Log.Warnf("error occurred to check \"%s\": %s\n", check.Name, check.Error.Error())
+				checks.SkippedChecks = append(checks.SkippedChecks, check)
 			}
 		}
 	},
