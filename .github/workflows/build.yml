@@ -1,0 +1,19 @@
+name: build
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+
+permissions: write-all
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository content
+              uses: actions/checkout@v4.1.7
+            
+            - name: Build releases
+              run: make
