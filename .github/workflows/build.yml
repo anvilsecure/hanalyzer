@@ -1,12 +1,10 @@
-name: build
+name: Build cross platform releases
 
 on:
     push:
         branches: [ main ]
     pull_request:
         branches: [ main ]
-
-permissions: write-all
 
 jobs:
     build:
@@ -17,3 +15,13 @@ jobs:
             
             - name: Build releases
               run: make
+
+            - name: GH Release
+              uses: softprops/action-gh-release@v2.0.8
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v1
+              with:
+                files: build/saphanalyzer_*
+              env:
+                GITHUB_TOKEN: $
