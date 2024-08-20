@@ -25,7 +25,7 @@ type Check struct {
 	IssuesPresent     bool
 	Error             error
 	Out               string
-	AffectedResources []string
+	AffectedResources []interface{}
 	Info              string
 }
 
