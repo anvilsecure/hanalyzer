@@ -278,17 +278,22 @@ func EvaluateResults(checkType CheckType) {
 					}
 				}
 				if len(check.Results) > 0 {
+					grantees, err := check.listGrantees()
+					if err != nil {
+						check.Error = err
+						break
+					}
 					message += "[!] Found entities (users/roles) with the permission to change CLIENT user parameter.\n"
-					for _, entity := range check.Results {
-						info += fmt.Sprintf("  - %s (type: %s)\n", entity["GRANTEE"], entity["GRANTEE_TYPE"])
+					for _, entity := range grantees {
+						info += fmt.Sprintf("  - %s (type: %s)\n", entity.Name, entity.Type)
 						check.AffectedResources = append(check.AffectedResources, struct {
 							Entity     string   `json:"Entity"`
 							EntityType string   `json:"EntityType"`
 							Privileges []string `json:"Privileges"`
 						}{
-							Entity:     entity["GRANTEE"].(string),
-							EntityType: entity["GRANTEE_TYPE"].(string),
-							Privileges: nil,
+							Entity:     entity.Name,
+							EntityType: entity.Type,
+							Privileges: entity.Privileges,
 						})
 					}
 					check.Out = message
