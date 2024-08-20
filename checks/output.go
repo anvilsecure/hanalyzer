@@ -47,9 +47,9 @@ import (
 var Out *Output = &Output{}
 
 type Result struct {
-	Message   string   `json:"message"`
-	Resources []string `json:"resources"`
-	Info      string   `json:"info"`
+	Message   string        `json:"message"`
+	Resources []interface{} `json:"resources"`
+	Info      string        `json:"info"`
 }
 
 type CheckOutput struct {
@@ -73,7 +73,7 @@ func (check *Check) addCheckResultToOutput(
 	message string,
 	info string,
 	issuesPresent bool,
-	affectedReources []string,
+	affectedReources []interface{},
 ) {
 	check.Out = message
 	check.Info = info
@@ -100,7 +100,7 @@ func CollectOutput() {
 				CheckName: check.Name,
 				Errors:    false,
 				ErrorList: []string{},
-				Issues:    true,
+				Issues:    check.IssuesPresent,
 				Result: Result{
 					Message:   check.Out,
 					Resources: check.AffectedResources,
