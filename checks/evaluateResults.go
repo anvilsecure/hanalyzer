@@ -19,7 +19,7 @@ var (
 func EvaluateResults(checkType CheckType) {
 	for _, check := range CheckList {
 		var message, info string
-		var issuesPresent = false
+		var affectedResources []interface{}
 		if check.Error != nil {
 			logger.Log.Warnf("error during execution of check \"%s\": %s", check.Name, check.Error.Error())
 			continue
@@ -30,7 +30,7 @@ func EvaluateResults(checkType CheckType) {
 			}
 			utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
-			case "CheckSystemUser":
+			case "CheckSystemUser": // output: DONE
 				if check.checkEmptyResult() {
 					check.Error = fmt.Errorf("possible error: no user found. Please check it manually")
 				} else {
@@ -44,7 +44,10 @@ func EvaluateResults(checkType CheckType) {
 							check.Results[0]["DEACTIVATION_TIME"],
 							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
 						)
-						issuesPresent = false
+						check.Out = message
+						check.Info = info
+						check.IssuesPresent = false
+						check.AffectedResources = nil
 					} else {
 						message = fmt.Sprintf(
 							"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
@@ -54,14 +57,19 @@ func EvaluateResults(checkType CheckType) {
 							"Last successful connection was in date %s.",
 							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
 						)
-						issuesPresent = true
+						check.Out = message
+						check.Info = info
+						check.IssuesPresent = true
+						check.AffectedResources = append(check.AffectedResources, "SYSTEM")
 					}
 				}
-			case "CheckPasswordLifetime":
+			case "CheckPasswordLifetime": // output: DONE
 				var users []map[string]interface{}
 				if check.checkEmptyResult() {
 					message = "[+] No user found with password lifetime disabled."
-					issuesPresent = false
+					check.Out = message
+					check.IssuesPresent = false
+					check.AffectedResources = nil
 				} else {
 					message = "[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n"
 					for _, r := range check.Results {
@@ -70,24 +78,40 @@ func EvaluateResults(checkType CheckType) {
 							continue
 						}
 						users = append(users, r)
+						affectedResources = append(affectedResources, user)
 					}
 					for _, u := range users {
 						info += fmt.Sprintf("  - %s\n", u["USER_NAME"].(string))
 					}
-					issuesPresent = true
+					check.Out = message
+					check.IssuesPresent = true
+					check.AffectedResources = affectedResources
 				}
-			case "SystemPrivileges":
+			case "SystemPrivileges": // output: DONE
+				var affectedResources = []struct {
+					Entity     string   `json:"Entity"`
+					EntityType string   `json:"EntityType"`
+					Privileges []string `json:"Privileges"`
+				}{}
 				if len(check.Results) > 0 {
 					grantees, err := check.listGrantees()
 					if err != nil {
 						check.Error = err
 						break
 					}
-					issuesPresent = true
 					privileges := make(map[string][]entity)
-					message = "[!] Please review the following entities (users/roles) because they might have too high privileges:\n"
+					message = "[!] Found entities (users/roles) that might have too high privileges.\n"
 					info = "[I] Breakdown per grantee\n"
 					for k, grantee := range grantees {
+						affectedResources = append(affectedResources, struct {
+							Entity     string   "json:\"Entity\""
+							EntityType string   "json:\"EntityType\""
+							Privileges []string "json:\"Privileges\""
+						}{
+							Entity:     grantee.Name,
+							EntityType: grantee.Type,
+							Privileges: grantee.Privileges,
+						})
 						info += fmt.Sprintf("  - %s (entity type: %s)\n", k, grantee.Type)
 						for _, p := range grantee.Privileges {
 							info += fmt.Sprintf("    - %s\n", p)
@@ -96,6 +120,11 @@ func EvaluateResults(checkType CheckType) {
 							privileges[p] = append(privileges[p], grantee)
 						}
 					}
+					check.AffectedResources = append(check.AffectedResources, affectedResources)
+					check.Out = "[!] Found entities (users/roles) that might have too high privileges.\n"
+					check.Info = "[I] Breakdown per grantee"
+					check.IssuesPresent = true
+
 					info += "[I] Breakdown per privilege\n"
 					for privilege, entities := range privileges {
 						info += fmt.Sprintf("  - %s\n", privilege)
@@ -105,69 +134,100 @@ func EvaluateResults(checkType CheckType) {
 					}
 				} else {
 					message = "[+] No privilege was found to be reviewed.\n"
+					check.Out = message
+					check.IssuesPresent = false
+					check.AffectedResources = nil
 				}
-			case "CriticalCombinations":
-				users := make(map[string]entity)
-				for _, r := range check.Results {
-					user := r["USER_NAME"].(string)
+			case "CriticalCombinations": // output: DONE
+				entities := make(map[string]entity)
+				for _, result := range check.Results {
+					user := result["USER_NAME"].(string)
 					if user == "SYSTEM" || user == "_SYS_REPO" {
 						continue
 					}
-					users[user] = entity{
+					entities[user] = entity{
 						Name:       user,
-						Privileges: append(users[user].Privileges, r["PRIVILEGE"].(string)),
+						Type:       "user",
+						Privileges: append(entities[user].Privileges, result["PRIVILEGE"].(string)),
 					}
 				}
 				issues := make(map[string]entity)
-				for _, u := range users {
+				for _, entity := range entities {
 					for _, couple := range DANGEROUS_COMBO {
-						if subslice(couple, u.Privileges) {
-							issues[u.Name] = u
+						if subslice(couple, entity.Privileges) {
+							issues[entity.Name] = entity
 						}
 					}
 				}
 				if len(issues) > 0 {
-					issuesPresent = true
-					message = "[!] The following users have dangerous privileges combinations.\n"
+					message = "[!] Found users that might have dangerous privileges combinations.\n"
 					var printed []string
-					for _, i := range issues {
-						info += fmt.Sprintf("  - %s\n", i.Name)
-						for _, p := range i.Privileges {
+					for _, user := range issues {
+						var affectedResource = struct {
+							Entity     string   "json:\"Entity\""
+							EntityType string   "json:\"EntityType\""
+							Privileges []string "json:\"Privileges\""
+						}{
+							Entity:     user.Name,
+							EntityType: user.Type,
+						}
+						info += fmt.Sprintf("  - %s\n", user.Name)
+						for _, privilege := range user.Privileges {
 							for _, couple := range DANGEROUS_COMBO {
-								if contains(couple, p) {
-									info += fmt.Sprintf("    - %s\n", utils.Red(p))
-									printed = append(printed, p)
+								if contains(couple, privilege) {
+									info += fmt.Sprintf("    - %s\n", utils.Red(privilege))
+									printed = append(printed, privilege)
 									break
 								}
 							}
+							affectedResource.Privileges = printed
 						}
-						notPrinted := difference(i.Privileges, printed)
+						notPrinted := difference(user.Privileges, printed)
 						for _, p := range notPrinted {
 							info += fmt.Sprintf("    - %s\n", p)
 						}
+						check.AffectedResources = append(check.AffectedResources, affectedResource)
 					}
+					check.Out = message
+					check.IssuesPresent = true
 				} else {
-					issuesPresent = false
 					message = "[+] No dangerous privilege combinations found.\n"
+					check.Out = message
+					check.IssuesPresent = false
+					check.AffectedResources = nil
 				}
-			case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment", "AnalyticPrivilege", "DebugPrivilege":
+			case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment", "AnalyticPrivilege", "DebugPrivilege": // output: DONE
+				privilege := check.Parameters[0]
 				if len(check.Results) > 0 {
-					issuesPresent = true
-					message = fmt.Sprintf("[!] The following users/roles have %s privilege:\n", check.Parameters[0])
+					message = fmt.Sprintf("[!] Found users/roles that have %s privilege.\n", privilege)
 					grantees, err := check.listGrantees()
 					if err != nil {
 						check.Error = err
 						break
 					}
+					for _, entity := range grantees {
+						check.AffectedResources = append(check.AffectedResources, struct {
+							Entity     string   `json:"Entity"`
+							EntityType string   `json:"EntityType"`
+							Privileges []string `json:"Privileges"`
+						}{
+							Entity:     entity.Name,
+							EntityType: entity.Type,
+							Privileges: entity.Privileges,
+						})
+					}
 					info += printGrantees(grantees)
+					check.Out = message
+					check.IssuesPresent = true
 				} else {
-					issuesPresent = false
-					message = fmt.Sprintf("[+] No user/role has %s privilege.", check.Parameters[0])
+					message = fmt.Sprintf("[+] No user/role has %s privilege.", privilege)
+					check.Out = message
+					check.IssuesPresent = false
+					check.AffectedResources = nil
 				}
-			case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport", "PredefinedCatalogRepositoryRoles":
+			case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport", "PredefinedCatalogRepositoryRoles": // output: DONE
 				if len(check.Results) > 0 {
-					issuesPresent = true
-					message = fmt.Sprintf("[!] The following users/roles have %s role:\n", check.Parameters[0])
+					message = fmt.Sprintf("[!] Found users/roles that have %s role.\n", check.Parameters[0])
 					grantees := make(map[string]entity)
 					for _, r := range check.Results {
 						user := r["GRANTEE"].(string)
@@ -177,12 +237,27 @@ func EvaluateResults(checkType CheckType) {
 							Privileges: append(grantees[user].Privileges, r["ROLE_NAME"].(string)),
 						}
 					}
+					for _, entity := range grantees {
+						check.AffectedResources = append(check.AffectedResources, struct {
+							Entity     string   `json:"Entity"`
+							EntityType string   `json:"EntityType"`
+							Privileges []string `json:"Privileges"`
+						}{
+							Entity:     entity.Name,
+							EntityType: entity.Type,
+							Privileges: entity.Privileges,
+						})
+					}
 					info += printGrantees(grantees)
+					check.Out = message
+					check.IssuesPresent = true
 				} else {
-					issuesPresent = false
 					message = fmt.Sprintf("[+] No user/role has %s role.", check.Parameters[0])
+					check.Out = message
+					check.IssuesPresent = false
+					check.AffectedResources = nil
 				}
-			case "UserParameterClient":
+			case "UserParameterClient": // output: DONE
 				preCheckClient, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					logger.Log.Error(err.Error())
@@ -190,27 +265,41 @@ func EvaluateResults(checkType CheckType) {
 					break
 				}
 				if len(preCheckClient.Results) == 0 {
-					issuesPresent = false
-					message = "[+] secure_client_parameter in [authorization] section in global.ini is not set.\n"
+					message = "[!] secure_client_parameter in [authorization] section in global.ini is not set.\n"
+					check.IssuesPresent = true
 				} else {
 					value := preCheckClient.Results[0]["VALUE"].(string)
 					if value == "true" {
-						issuesPresent = false
-						message += "[!] secure_client_parameter in [authorization] section in global.ini is set to true.\n"
+						message += "[+] secure_client_parameter in [authorization] section in global.ini is set to true.\n"
+						check.IssuesPresent = false
 					} else {
-						issuesPresent = true
-						message += "[!] secure_client_parameter in [authorization] section in global.ini is set to false\n"
+						message += "[!] secure_client_parameter in [authorization] section in global.ini is set to false.\n"
+						check.IssuesPresent = true
 					}
 				}
 				if len(check.Results) > 0 {
-					message += "[!] Please review the following entities (users/roles) because they can change CLIENT user parameter:\n"
-					for _, r := range check.Results {
-						info += fmt.Sprintf("  - %s (type: %s)\n", r["GRANTEE"], r["GRANTEE_TYPE"])
+					message += "[!] Found entities (users/roles) with the permission to change CLIENT user parameter.\n"
+					for _, entity := range check.Results {
+						info += fmt.Sprintf("  - %s (type: %s)\n", entity["GRANTEE"], entity["GRANTEE_TYPE"])
+						check.AffectedResources = append(check.AffectedResources, struct {
+							Entity     string   `json:"Entity"`
+							EntityType string   `json:"EntityType"`
+							Privileges []string `json:"Privileges"`
+						}{
+							Entity:     entity["GRANTEE"].(string),
+							EntityType: entity["GRANTEE_TYPE"].(string),
+							Privileges: nil,
+						})
 					}
+					check.Out = message
+					check.IssuesPresent = true
 				} else {
 					info += "[+] No user/role can change the CLIENT user parameter."
+					check.Out = message
+					check.Info = info
+					check.AffectedResources = nil
 				}
-			case "OSFSPermissions":
+			case "OSFSPermissions": // output: todo
 				preCheckOS, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					logger.Log.Error(err.Error())
@@ -218,22 +307,18 @@ func EvaluateResults(checkType CheckType) {
 					break
 				}
 				if len(preCheckOS.Results) == 0 {
-					issuesPresent = true
 					message = "[!] file_security in [import_export] section of indexserver.ini not set.\n"
 				} else {
 					value := preCheckOS.Results[0]["VALUE"].(string)
 					if value == "medium" || value == "high" {
-						issuesPresent = false
 						message = fmt.Sprintf("[+] file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
 					} else {
-						issuesPresent = true
 						message = "[!] file_security set to LOW value for import/export in indexserver.ini.\n"
 					}
 				}
 				if len(check.Results) > 0 {
 					grantees := make(map[string]entity)
-					issuesPresent = true
-					message += "[!] Please review the following entities (users/roles) because they have IMPORT/EXPORT privileges.\n"
+					message += "[!] Found entities (users/roles) that have IMPORT/EXPORT privileges.\n"
 					for _, r := range check.Results {
 						grantee := r["GRANTEE"].(string)
 						grantees[grantee] = entity{
@@ -245,12 +330,19 @@ func EvaluateResults(checkType CheckType) {
 					for _, g := range grantees {
 						info += fmt.Sprintf("  - %s (type: %s): %s\n", g.Name, g.Type, strings.Join(g.Privileges, "/"))
 					}
+					check.Out = message
+					check.IssuesPresent = true
+					check.AffectedResources = append(check.AffectedResources, info)
 				} else {
-					issuesPresent = false
 					message = "[+] No user/role have IMPORT/EXPORT privileges.\n"
+					check.Out = message
+					check.IssuesPresent = false
+					check.AffectedResources = nil
 				}
-				info += "\nCAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]\n  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]\n  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]\n  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]\n"
-			case "Auditing":
+				CAVEAT := "CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]\n  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]\n  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]\n  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]"
+				info += "\n" + CAVEAT + "\n"
+				check.Info = CAVEAT
+			case "Auditing": // output: todo
 				preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					log.Println(err.Error())
@@ -262,7 +354,7 @@ func EvaluateResults(checkType CheckType) {
 					utils.Ok("[+] Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %s \n", check.Results[0]["COUNT"].(int64))
 					utils.Info("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
 				}
-			case "AuditingCSV":
+			case "AuditingCSV": // output: todo
 				preAuditingCSV, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					log.Println(err.Error())
@@ -296,7 +388,7 @@ func EvaluateResults(checkType CheckType) {
 				}
 				utils.Warning("CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n")
 				fmt.Println("  - The default audit trail target is syslog (SYSLOGPROTOCOL) for the system database. If you are using syslog, ensure that it is installed and configured according to your requirements (for example, for writing the audit trail to a remote server). [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-syslog]")
-			case "InternalHostnameResolutionSingle":
+			case "InternalHostnameResolutionSingle": // output: todo
 				if len(check.Results) == 0 {
 					utils.Error("[!] In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.")
 				} else if len(check.Results) == 1 {
@@ -311,7 +403,7 @@ func EvaluateResults(checkType CheckType) {
 					}
 				}
 				utils.Info("Further information about possible values at: https://help.sap.com/docs/SAP_HANA_PLATFORM/6b94445c94ae495c83a19646e7c3fd56/3fd4912896284029931997903c75d956.html\n")
-			case "InternalHostnameResolutionMultiple":
+			case "InternalHostnameResolutionMultiple": // output: todo
 				internal, err := getCheckByName("InternalHostnameResolutionSingle")
 				if err != nil {
 					log.Println(err.Error())
@@ -332,7 +424,7 @@ func EvaluateResults(checkType CheckType) {
 						utils.Info("The system is not in multi host configuration, listeninterface value in [communication] section is %s\n", v)
 					}
 				}
-			case "HostnameResolutionReplication":
+			case "HostnameResolutionReplication": // output: todo
 				pre0, err := getCheckByName("_pre_0_HostnameResolutionReplication")
 				if err != nil {
 					log.Println(err.Error())
@@ -377,19 +469,19 @@ func EvaluateResults(checkType CheckType) {
 					}
 					utils.Warning("If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n")
 				}
-			case "InstanceSSFSMasterKey":
+			case "InstanceSSFSMasterKey": // output: todo
 				if len(check.Results) == 0 {
 					utils.Error("[!] Instance SSFS Master Key has never been rotated.\n")
 				} else {
 					utils.Ok("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 				}
-			case "SystemPKISSFSMasterKey":
+			case "SystemPKISSFSMasterKey": // output: todo
 				if len(check.Results) == 0 {
 					utils.Error("[!] System PKI SSFS Master Key has never been rotated.\n")
 				} else {
 					utils.Ok("[+] System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 				}
-			case "PasswordHashMethods":
+			case "PasswordHashMethods": // output: todo
 				if len(check.Results) == 0 ||
 					(len(check.Results) == 1 &&
 						strings.Contains(strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])), "sha256")) {
@@ -397,7 +489,7 @@ func EvaluateResults(checkType CheckType) {
 				} else if len(check.Results) == 1 && strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])) == "pbkdf2" {
 					utils.Warning("[+] All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n")
 				}
-			case "RootEncryptionKeys":
+			case "RootEncryptionKeys": // output: todo
 				for _, record := range check.Results {
 					keyVersions := record["VERSIONS"].(int64)
 					keyType := record["ROOT_KEY_TYPE"].(string)
@@ -426,7 +518,7 @@ func EvaluateResults(checkType CheckType) {
 						}
 					}
 				}
-			case "DataAndLogVolumeEncryption":
+			case "DataAndLogVolumeEncryption": // output: todo
 				var dict = map[string]string{
 					"PERSISTENCE": "Data",
 					"LOG":         "Log",
@@ -450,7 +542,7 @@ func EvaluateResults(checkType CheckType) {
 						utils.Error("[!] Encryption of %s is disabled.\n", dict[scope])
 					}
 				}
-			case "TraceFiles":
+			case "TraceFiles": // output: todo
 				pre0, err := getCheckByName("_pre_0_TraceFiles")
 				if err != nil {
 					log.Println(err.Error())
@@ -470,7 +562,7 @@ func EvaluateResults(checkType CheckType) {
 				} else {
 					utils.Ok("[+] Trace files not found\n")
 				}
-			case "DumpFiles":
+			case "DumpFiles": // output: todo
 				if len(check.Results) > 0 {
 					utils.Warning("[!] Dump files found.\n")
 					for _, f := range check.Results {
@@ -484,7 +576,7 @@ func EvaluateResults(checkType CheckType) {
 				} else {
 					utils.Ok("[+] Dump files not found\n")
 				}
-			case "SAMLBasedAuthN":
+			case "SAMLBasedAuthN": // output: todo
 				if len(check.Results) > 0 {
 					utils.Warning("[!] The following SAML or SSL certificates were found.\nPlease review them carefully to avoid authentication issues cross-tenant.\n")
 					for _, f := range check.Results {
@@ -499,7 +591,7 @@ func EvaluateResults(checkType CheckType) {
 				} else {
 					utils.Ok("[+] No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n")
 				}
-			case "ConfigurationBlacklist":
+			case "ConfigurationBlacklist": // output: todo
 				ds := tablib.NewDataset([]string{
 					"LAYER_NAME",
 					"TENANT_NAME",
@@ -525,7 +617,7 @@ func EvaluateResults(checkType CheckType) {
 				} else {
 					log.Fatalln("No configuration found. SAP Hana usually has default configuration. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_INIFILE_CONTENTS\" WHERE FILE_NAME = 'multidb.ini'`")
 				}
-			case "RestrictedFeatures":
+			case "RestrictedFeatures": // output: todo
 				ds := tablib.NewDataset([]string{
 					"NAME",
 					"DESCRIPTION",
@@ -568,9 +660,8 @@ func EvaluateResults(checkType CheckType) {
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)
 				os.Exit(1)
 			}
-			check.Out = message + info
-			check.IssuesPresent = issuesPresent
-			if issuesPresent {
+			// Print output
+			if check.IssuesPresent {
 				utils.Error(message)
 				if info != "" {
 					utils.Info(info)
