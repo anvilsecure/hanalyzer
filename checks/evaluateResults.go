@@ -304,7 +304,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Info = info
 					check.AffectedResources = nil
 				}
-			case "OSFSPermissions": // output: todo
+			case "OSFSPermissions": // output: DONE
 				preCheckOS, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					logger.Log.Error(err.Error())
@@ -354,18 +354,23 @@ func EvaluateResults(checkType CheckType) {
 				CAVEAT := "CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]\n  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]\n  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]\n  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]"
 				info += "\n" + CAVEAT + "\n"
 				check.Info = CAVEAT
-			case "Auditing": // output: todo
+			case "Auditing": // output: DONE
 				preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					log.Println(err.Error())
 					break
 				}
 				if len(check.Results) == 0 || (len(check.Results) > 0 && check.Results[0]["COUNT"].(int64) == 0) {
-					utils.Error("[!] Auditing disabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, is not set or FALSE.\n")
+					message = "[!] Auditing disabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, is not set or FALSE.\n"
+					check.IssuesPresent = true
 				} else {
-					utils.Ok("[+] Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %s \n", check.Results[0]["COUNT"].(int64))
-					utils.Info("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
+					message = fmt.Sprintf("[+] Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %d \n", check.Results[0]["COUNT"].(int64))
+					check.IssuesPresent = false
+					info = fmt.Sprintf("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
 				}
+				check.Out = message
+				check.Info = info
+				check.AffectedResources = nil
 			case "AuditingCSV": // output: todo
 				preAuditingCSV, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
