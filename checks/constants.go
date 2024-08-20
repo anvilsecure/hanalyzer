@@ -14,17 +14,19 @@ const (
 type Results []map[string]interface{}
 
 type Check struct {
-	Type           CheckType
-	Name           string
-	Description    string
-	Link           string
-	Recommendation string
-	Control        string
-	Results        Results
-	Parameters     []string
-	IssuesPresent  bool
-	Error          error
-	Out            string
+	Type              CheckType
+	Name              string
+	Description       string
+	Link              string
+	Recommendation    string
+	Control           string
+	Results           Results
+	Parameters        []string
+	IssuesPresent     bool
+	Error             error
+	Out               string
+	AffectedResources []string
+	Info              string
 }
 
 type entity struct {

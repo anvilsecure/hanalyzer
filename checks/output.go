@@ -47,20 +47,38 @@ import (
 var Out *Output = &Output{}
 
 type Result struct {
+	Message   string   `json:"message"`
+	Resources []string `json:"resources"`
+	Info      string   `json:"info"`
+}
+
+type CheckOutput struct {
 	CheckName string   `json:"check_name"`
 	Errors    bool     `json:"errors"`
 	ErrorList []string `json:"error_list"`
 	Issues    bool     `json:"issues"`
-	Result    string   `json:"result"`
+	Result    Result   `json:"result"`
 }
 
 type Output struct {
-	ServerIP       string   `json:"server_ip"`
-	ServerPort     int      `json:"server_port"`
-	Sid            string   `json:"sid"`
-	ExecutedChecks []string `json:"executed_checks"`
-	SkippedChecks  []string `json:"skipped_checks"`
-	Results        []Result `json:"results"`
+	ServerIP       string        `json:"server_ip"`
+	ServerPort     int           `json:"server_port"`
+	Sid            string        `json:"sid"`
+	ExecutedChecks []string      `json:"executed_checks"`
+	SkippedChecks  []string      `json:"skipped_checks"`
+	Checks         []CheckOutput `json:"checks"`
+}
+
+func (check *Check) addCheckResultToOutput(
+	message string,
+	info string,
+	issuesPresent bool,
+	affectedReources []string,
+) {
+	check.Out = message
+	check.Info = info
+	check.IssuesPresent = issuesPresent
+	check.AffectedResources = affectedReources
 }
 
 func CollectOutput() {
@@ -70,20 +88,24 @@ func CollectOutput() {
 	for _, check := range CheckList {
 		if check.Error != nil {
 			Out.SkippedChecks = append(Out.SkippedChecks, check.Name)
-			Out.Results = append(Out.Results, Result{
+			Out.Checks = append(Out.Checks, CheckOutput{
 				CheckName: check.Name,
 				Errors:    true,
 				ErrorList: []string{check.Error.Error()},
 				Issues:    false,
-				Result:    "",
+				Result:    Result{},
 			})
 		} else {
-			Out.Results = append(Out.Results, Result{
+			Out.Checks = append(Out.Checks, CheckOutput{
 				CheckName: check.Name,
 				Errors:    false,
 				ErrorList: []string{},
 				Issues:    true,
-				Result:    check.Out,
+				Result: Result{
+					Message:   check.Out,
+					Resources: check.AffectedResources,
+					Info:      check.Info,
+				},
 			})
 		}
 	}
