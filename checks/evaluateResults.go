@@ -313,31 +313,38 @@ func EvaluateResults(checkType CheckType) {
 				}
 				if len(preCheckOS.Results) == 0 {
 					message = "[!] file_security in [import_export] section of indexserver.ini not set.\n"
+					check.IssuesPresent = true
 				} else {
 					value := preCheckOS.Results[0]["VALUE"].(string)
 					if value == "medium" || value == "high" {
 						message = fmt.Sprintf("[+] file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
+						check.IssuesPresent = false
 					} else {
 						message = "[!] file_security set to LOW value for import/export in indexserver.ini.\n"
+						check.IssuesPresent = true
 					}
 				}
 				if len(check.Results) > 0 {
-					grantees := make(map[string]entity)
 					message += "[!] Found entities (users/roles) that have IMPORT/EXPORT privileges.\n"
-					for _, r := range check.Results {
-						grantee := r["GRANTEE"].(string)
-						grantees[grantee] = entity{
-							Type:       r["GRANTEE_TYPE"].(string),
-							Name:       grantee,
-							Privileges: append(grantees[grantee].Privileges, r["PRIVILEGE"].(string)),
-						}
+					grantees, err := check.listGrantees()
+					if err != nil {
+						check.Error = err
+						break
 					}
-					for _, g := range grantees {
-						info += fmt.Sprintf("  - %s (type: %s): %s\n", g.Name, g.Type, strings.Join(g.Privileges, "/"))
+					for _, entity := range grantees {
+						info += fmt.Sprintf("  - %s (type: %s): %s\n", entity.Name, entity.Type, strings.Join(entity.Privileges, "/"))
+						check.AffectedResources = append(check.AffectedResources, struct {
+							Entity     string   `json:"Entity"`
+							EntityType string   `json:"EntityType"`
+							Privileges []string `json:"Privileges"`
+						}{
+							Entity:     entity.Name,
+							EntityType: entity.Type,
+							Privileges: entity.Privileges,
+						})
 					}
 					check.Out = message
 					check.IssuesPresent = true
-					check.AffectedResources = append(check.AffectedResources, info)
 				} else {
 					message = "[+] No user/role have IMPORT/EXPORT privileges.\n"
 					check.Out = message
