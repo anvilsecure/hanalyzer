@@ -189,10 +189,12 @@ func (check *Check) listGrantees() (map[string]entity, error) {
 	}
 	for _, r := range check.Results {
 		user := r["GRANTEE"].(string)
+		granteeType := r["GRANTEE_TYPE"].(string)
+		privilege := r["PRIVILEGE"].(string)
 		grantees[user] = entity{
-			Type:       r["GRANTEE_TYPE"].(string),
 			Name:       user,
-			Privileges: append(grantees[user].Privileges, r["PRIVILEGE"].(string)),
+			Type:       granteeType,
+			Privileges: append(grantees[user].Privileges, privilege),
 		}
 	}
 	return grantees, nil
