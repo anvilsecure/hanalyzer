@@ -725,28 +725,27 @@ func EvaluateResults(checkType CheckType) {
 				}
 				check.Out = message
 				check.AffectedResources = GenericSliceToInterfaceSlice(affectedResources)
-			case "DataAndLogVolumeEncryption": // output: todo
+			case "DataAndLogVolumeEncryption": // output: DONE
 				var dict = map[string]string{
 					"PERSISTENCE": "Data",
 					"LOG":         "Log",
 					"BACKUP":      "Backup",
 				}
 				for _, record := range check.Results {
-					enabled := false
 					scope, ok := record["SCOPE"].(string)
 					if !ok {
-						log.Printf("Type assertion of %s failed.\n", record["SCOPE"])
+						logger.Log.Errorf("Type assertion of %s failed.\n", record["SCOPE"])
 					}
-					if strings.ToLower(record["IS_ENCRYPTION_ACTIVE"].(string)) == "true" {
-						enabled = true
-					}
+					enabled := strings.ToLower(record["IS_ENCRYPTION_ACTIVE"].(string)) == "true"
 					if !ok {
-						log.Printf("Type assertion of %s failed.\n", record["IS_ENCRYPTION_ACTIVE"])
+						logger.Log.Errorf("Type assertion of %s failed.\n", record["IS_ENCRYPTION_ACTIVE"])
 					}
 					if enabled {
-						utils.Ok("[+] Encryption of %s is active.\n", dict[scope])
+						check.IssuesPresent = false
+						check.Out = fmt.Sprintf("[+] Encryption of %s is active.\n", dict[scope])
 					} else {
-						utils.Error("[!] Encryption of %s is disabled.\n", dict[scope])
+						check.IssuesPresent = true
+						check.Out = fmt.Sprintf("[!] Encryption of %s is disabled.\n", dict[scope])
 					}
 				}
 			case "TraceFiles": // output: todo
