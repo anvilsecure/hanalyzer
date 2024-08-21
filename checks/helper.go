@@ -226,3 +226,14 @@ func (check *Check) checkEmptyResult() bool {
 	}
 	return false
 }
+
+// GenericSliceToInterfaceSlice converts a slice of any type to a slice of interface{}
+func GenericSliceToInterfaceSlice[T any](original []T) (interfaceSlice []interface{}) {
+	if original == nil {
+		return nil
+	}
+	for _, element := range original {
+		interfaceSlice = append(interfaceSlice, element)
+	}
+	return interfaceSlice
+}
