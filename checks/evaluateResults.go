@@ -549,13 +549,13 @@ func EvaluateResults(checkType CheckType) {
 						}
 					} else {
 						check.IssuesPresent = false
-						utils.Info("The system is not in multi host configuration, listeninterface value in [communication] section is %s\n", v)
+						message = fmt.Sprintf("The system is not in multi host configuration, listeninterface value in [communication] section is %s\n", v)
 					}
 					check.Out = message
 					check.Info = info
 					check.Caveat = caveat
 				}
-			case "HostnameResolutionReplication": // output: todo
+			case "HostnameResolutionReplication": // output: DONE
 				pre0, err := getCheckByName("_pre_0_HostnameResolutionReplication")
 				if err != nil {
 					logger.Log.Error(err.Error())
@@ -570,35 +570,59 @@ func EvaluateResults(checkType CheckType) {
 					v := pre0.Results[0]["VALUE"].(string)
 					if v == ".global" {
 						if len(pre1.Results) > 0 {
-							utils.Warning("[-] The following hostname are set:\n")
+							message = "[-] Hostnames found.\n"
+							check.IssuesPresent = true
 							for _, r := range pre1.Results {
-								fmt.Printf("  - %s -> %s\n", r["KEY"].(string), r["VALUE"].(string))
+								key := r["KEY"].(string)
+								value := r["VALUE"].(string)
+								check.AffectedResources = append(check.AffectedResources, struct {
+									Key   string `json:"Key"`
+									Value string `json:"Value"`
+								}{
+									Key:   key,
+									Value: value,
+								})
+								message += fmt.Sprintf("  - %s -> %s\n", key, value)
 							}
-						} else {
-							utils.Info("Even if the system is configured as multi host (listeninterface in [communication] section is %s) no hostname was found in [system_replication_communication] section\n", v)
-						}
-						if len(check.Results) == 0 {
-							utils.Error("[!] No restriction found in key allowed_sender in section [system_replication_communication].\n")
-						} else {
-							var allowList []string
-							for _, v := range check.Results {
-								allowList = append(allowList, v["VALUE"].(string))
-							}
-							if len(allowList) == 1 && allowList[0] == "" {
-								break
-							}
-							if len(allowList) > 0 {
-								utils.Info("Communication is restricted to the following hostnames:\n")
-								for _, h := range allowList {
-									if h == "" {
-										continue
-									}
-									fmt.Printf("  - %s\n", h)
+							// Check if there is an allowlist for hostnames that can connect to the server
+							if len(check.Results) == 0 {
+								message += "[!] No restriction found. No allowed_sender in section [system_replication_communication].\n"
+							} else {
+								var allowList []string
+								for _, v := range check.Results {
+									allowList = append(allowList, v["VALUE"].(string))
 								}
+								if len(allowList) == 1 && allowList[0] == "" {
+									message += "[!] No restriction found. No allowed_sender in section [system_replication_communication].\n"
+									break
+								}
+								// Convert allowList to []interface{}
+								var resourcesAsInterface []interface{}
+								if len(allowList) > 0 {
+									check.IssuesPresent = false
+									message += "Communication is restricted to the specified hostnames.\n"
+									for _, host := range allowList {
+										if host == "" {
+											continue
+										}
+										resourcesAsInterface = append(resourcesAsInterface, host)
+										message += fmt.Sprintf("  - %s\n", host)
+									}
+								}
+								check.AffectedResources = resourcesAsInterface
 							}
+						} else {
+							check.IssuesPresent = false
+							message = fmt.Sprintf("Even if the system is configured as multi host (listeninterface in [communication] section is %s) no hostname was found in [system_replication_communication] section\n", v)
 						}
+					} else if v == ".internal" {
+						check.IssuesPresent = false
+						message = "A separate internal network channel is configured for system replication (in section [system_replication_communication] `listeninterface` parameter is `.internal`).\nCheck key-value pairs for the IP addresses of the network adapters for the system replication in the [system_replication_hostname_resolution] section.\n" // TODO: add automated query
 					}
-					utils.Warning("If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n")
+					caveat = "If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n"
+					check.Out = message
+					check.Info = info
+					check.Caveat = caveat
 				}
 			case "InstanceSSFSMasterKey": // output: todo
 				if len(check.Results) == 0 {
