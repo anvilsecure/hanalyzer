@@ -87,7 +87,7 @@ func EvaluateResults(checkType CheckType) {
 					check.IssuesPresent = true
 					check.AffectedResources = affectedResources
 				}
-			case "SystemPrivileges": // output: DONE
+			case "SystemPrivileges": // output: TOFIX
 				var affectedResources = []struct {
 					Entity     string   `json:"Entity"`
 					EntityType string   `json:"EntityType"`
@@ -248,7 +248,7 @@ func EvaluateResults(checkType CheckType) {
 							Privileges: entity.Privileges,
 						})
 					}
-					info += printGrantees(grantees)
+					info += printGrantees(grantees) // TOFIX
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
@@ -489,16 +489,11 @@ func EvaluateResults(checkType CheckType) {
 				}{
 					Resources: resources,
 				})
-				// Convert affectedResources to []interface{}
-				var resourcesAsInterface []interface{}
-				for _, res := range affectedResources {
-					resourcesAsInterface = append(resourcesAsInterface, res)
-				}
 				caveat += "CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n"
 				caveat += "  - The default audit trail target is syslog (SYSLOGPROTOCOL) for the system database. If you are using syslog, ensure that it is installed and configured according to your requirements (for example, for writing the audit trail to a remote server). [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%%3A-syslog]"
 				check.Out = message
 				check.Caveat = caveat
-				check.AffectedResources = resourcesAsInterface
+				check.AffectedResources = GenericSliceToInterfaceSlice(affectedResources)
 			case "InternalHostnameResolutionSingle": // output: DONE
 				if len(check.Results) == 0 {
 					check.IssuesPresent = true
@@ -650,7 +645,20 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = "[+] All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n"
 					check.IssuesPresent = false
 				}
-			case "RootEncryptionKeys": // output: todo
+			case "RootEncryptionKeys": // output: DONE
+				var affectedResources = []struct {
+					KeyVersions        int64  `json:"KeyVersions"`
+					KeyType            string `json:"KeyType"`
+					KeyCreationDate    string `json:"KeyCreationDate"`
+					KeyLastVersionDate string `json:"KeyLastVersionDate"`
+					Threshold          string `json:"Threshold"`
+				}{}
+				neverRotated := false
+				moreThanThreshold := false
+				lessThanThreshold := false
+				//threshold
+				duration := oneMonth
+				var threshold string
 				for _, record := range check.Results {
 					keyVersions := record["VERSIONS"].(int64)
 					keyType := record["ROOT_KEY_TYPE"].(string)
@@ -666,19 +674,58 @@ func EvaluateResults(checkType CheckType) {
 						logger.Log.Error(err.Error())
 					}
 					if keyVersions == 1 {
-						utils.Error("[!] ROOT key of type '%s' was never rotated.\n", keyType)
-						utils.Info("\t- Creation date: %s\n", utils.Red(keyCreationDate.Format(layout)))
+						neverRotated = true
+						threshold = "never"
 					} else {
-						duration := oneMonth
-						if time.Now().After(keyLastVersionDate.Add(duration.Value)) {
-							utils.Warning("[!] ROOT key of type '%s' was rotated more than %s ago.\n", keyType, duration.Literal)
-							utils.Info("\t- Creation date: %s\n\t- Rotation date: %s\n", keyCreationDate.Format(layout), utils.Yellow(keyLastVersionDate.Format(layout)))
-						} else {
-							utils.Ok("[+] ROOT key of type '%s' was rotated less than %s ago.\n", keyType, duration.Literal)
-							utils.Info("\t- Creation date: %s\n\t- Rotation date: %s\n", keyCreationDate.Format(layout), keyLastVersionDate.Format(layout))
+						if time.Now().After(keyLastVersionDate.Add(duration.Value)) { // more than threshold
+							moreThanThreshold = true
+							threshold = "more"
+						} else { // less than threshold
+							lessThanThreshold = true
+							threshold = "less"
 						}
 					}
+					affectedResources = append(affectedResources, struct {
+						KeyVersions        int64  "json:\"KeyVersions\""
+						KeyType            string "json:\"KeyType\""
+						KeyCreationDate    string "json:\"KeyCreationDate\""
+						KeyLastVersionDate string "json:\"KeyLastVersionDate\""
+						Threshold          string `json:"Threshold"`
+					}{
+						KeyVersions:        keyVersions,
+						KeyType:            keyType,
+						KeyCreationDate:    keyCreationDate.Format(layout),
+						KeyLastVersionDate: keyLastVersionDate.Format(layout),
+						Threshold:          threshold,
+					})
 				}
+				if neverRotated {
+					check.IssuesPresent = true
+					message += "[!] There are keys that have never been rotated\n"
+					neverRotated = false
+				}
+				if moreThanThreshold {
+					check.IssuesPresent = true
+					message += fmt.Sprintf("[!] There are keys that have been rotated more than %s ago.\n", duration.Literal)
+					moreThanThreshold = false
+				}
+				if lessThanThreshold {
+					check.IssuesPresent = false
+					message += fmt.Sprintf("[+] There are keys rotated less than %s ago.\n", duration.Literal)
+					lessThanThreshold = false
+				}
+				// TOFIX: right now the resources are printed here, before the message is printed
+				// in fact, the message will be printed after the switch at line 873/878
+				for _, key := range affectedResources {
+					utils.Info(
+						"- Key type: %s\n\t- Creation date: %s\n\t- Last version date: %s\n",
+						key.KeyType,
+						key.KeyCreationDate,
+						key.KeyLastVersionDate,
+					)
+				}
+				check.Out = message
+				check.AffectedResources = GenericSliceToInterfaceSlice(affectedResources)
 			case "DataAndLogVolumeEncryption": // output: todo
 				var dict = map[string]string{
 					"PERSISTENCE": "Data",
