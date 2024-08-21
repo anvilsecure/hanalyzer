@@ -357,7 +357,7 @@ func EvaluateResults(checkType CheckType) {
 			case "Auditing": // output: DONE
 				preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
 					break
 				}
 				if len(check.Results) == 0 || (len(check.Results) > 0 && check.Results[0]["COUNT"].(int64) == 0) {
@@ -374,7 +374,7 @@ func EvaluateResults(checkType CheckType) {
 			case "AuditingCSV": // output: todo
 				preAuditingCSV, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
 					break
 				}
 				if len(check.Results) == 0 && len(preAuditingCSV.Results) == 0 {
@@ -423,7 +423,7 @@ func EvaluateResults(checkType CheckType) {
 			case "InternalHostnameResolutionMultiple": // output: todo
 				internal, err := getCheckByName("InternalHostnameResolutionSingle")
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
 					break
 				}
 				if len(internal.Results) == 1 {
@@ -444,12 +444,12 @@ func EvaluateResults(checkType CheckType) {
 			case "HostnameResolutionReplication": // output: todo
 				pre0, err := getCheckByName("_pre_0_HostnameResolutionReplication")
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
 					break
 				}
 				pre1, err := getCheckByName("_pre_1_HostnameResolutionReplication")
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
 					break
 				}
 				if len(pre0.Results) == 1 {
@@ -515,11 +515,11 @@ func EvaluateResults(checkType CheckType) {
 					layout := "2006-01-02 15:04:05"
 					keyCreationDate, err := time.Parse(layout, keyCreationDateString)
 					if err != nil {
-						log.Println(err.Error())
+						logger.Log.Error(err.Error())
 					}
 					keyLastVersionDate, _ := time.Parse(layout, keyLastVersionDateString)
 					if err != nil {
-						log.Println(err.Error())
+						logger.Log.Error(err.Error())
 					}
 					if keyVersions == 1 {
 						utils.Error("[!] ROOT key of type '%s' was never rotated.\n", keyType)
@@ -562,7 +562,7 @@ func EvaluateResults(checkType CheckType) {
 			case "TraceFiles": // output: todo
 				pre0, err := getCheckByName("_pre_0_TraceFiles")
 				if err != nil {
-					log.Println(err.Error())
+					logger.Log.Error(err.Error())
 					break
 				}
 				out := check.Results
