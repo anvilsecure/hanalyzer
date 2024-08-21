@@ -626,18 +626,19 @@ func EvaluateResults(checkType CheckType) {
 				}
 			case "InstanceSSFSMasterKey": // output: DONE
 				if len(check.Results) == 0 {
-					message = "[!] Instance SSFS Master Key has never been rotated.\n"
+					check.Out = "[!] Instance SSFS Master Key has never been rotated.\n"
 					check.IssuesPresent = true
 				} else {
-					message = fmt.Sprintf("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					check.Out = fmt.Sprintf("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 					check.IssuesPresent = false
 				}
-				check.Out = message
 			case "SystemPKISSFSMasterKey": // output: todo
 				if len(check.Results) == 0 {
-					utils.Error("[!] System PKI SSFS Master Key has never been rotated.\n")
+					check.Out = "[!] System PKI SSFS Master Key has never been rotated.\n"
+					check.IssuesPresent = true
 				} else {
-					utils.Ok("[+] System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					check.Out = fmt.Sprintf("[+] System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					check.IssuesPresent = false
 				}
 			case "PasswordHashMethods": // output: todo
 				if len(check.Results) == 0 ||
@@ -820,14 +821,14 @@ func EvaluateResults(checkType CheckType) {
 			}
 			// Print output
 			if check.IssuesPresent {
-				utils.Error(message)
-				if info != "" {
-					utils.Info(info)
+				utils.Error(check.Out)
+				if check.Info != "" {
+					utils.Info(check.Info)
 				}
 			} else {
-				utils.Ok(message)
-				if info != "" {
-					utils.Info(info)
+				utils.Ok(check.Out)
+				if check.Info != "" {
+					utils.Info(check.Info)
 				}
 			}
 			if check.Caveat != "" {
