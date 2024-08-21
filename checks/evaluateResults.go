@@ -18,7 +18,7 @@ var (
 
 func EvaluateResults(checkType CheckType) {
 	for _, check := range CheckList {
-		var message, info string
+		var message, info, caveat string
 		var affectedResources []interface{}
 		if check.Error != nil {
 			logger.Log.Warnf("error during execution of check \"%s\": %s", check.Name, check.Error.Error())
@@ -351,9 +351,7 @@ func EvaluateResults(checkType CheckType) {
 					check.IssuesPresent = false
 					check.AffectedResources = nil
 				}
-				CAVEAT := "CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]\n  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]\n  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]\n  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]"
-				info += "\n" + CAVEAT + "\n"
-				check.Info = CAVEAT
+				check.Caveat = "\nCAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n  - Only operating system (OS) users that are needed for operating SAP HANA exist on the SAP HANA system, that is: sapadm, <sid>adm, and <sid>crypt. Ensure that no additional unnecessary users exist. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#operating-system-users]\n  - You can verify the permissions of directories in the file system using the SAP HANA database lifecycle manager (HDBLCM) resident program with installation parameter check_installation. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions]\n  - OS security patches are not installed by default. Install them for you OS as soon as they become available. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-security-patches]\n  - Check sudo configuration. [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-sudo-configuration]\n"
 			case "Auditing": // output: DONE
 				preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
@@ -371,40 +369,136 @@ func EvaluateResults(checkType CheckType) {
 				check.Out = message
 				check.Info = info
 				check.AffectedResources = nil
-			case "AuditingCSV": // output: todo
+			case "AuditingCSV": // output: DONE
+				var affectedResources = []struct {
+					Resources struct {
+						ConfigurationFiles []struct {
+							FileName string `json:"FileName"`
+							Section  string `json:"Section"`
+							Key      string `json:"Key"`
+							Value    string `json:"Value"`
+						} `json:"ConfigurationFiles"`
+						Policies []struct {
+							PolicyName string `json:"PolicyName"`
+							Active     bool   `json:"Active"`
+							UserName   string `json:"UserName"`
+						} `json:"Policies"`
+					}
+				}{}
+				configFiles := []struct {
+					FileName string `json:"FileName"`
+					Section  string `json:"Section"`
+					Key      string `json:"Key"`
+					Value    string `json:"Value"`
+				}{}
+				policies := []struct {
+					PolicyName string `json:"PolicyName"`
+					Active     bool   `json:"Active"`
+					UserName   string `json:"UserName"`
+				}{}
+				resources := struct {
+					ConfigurationFiles []struct {
+						FileName string `json:"FileName"`
+						Section  string `json:"Section"`
+						Key      string `json:"Key"`
+						Value    string `json:"Value"`
+					} `json:"ConfigurationFiles"`
+					Policies []struct {
+						PolicyName string `json:"PolicyName"`
+						Active     bool   `json:"Active"`
+						UserName   string `json:"UserName"`
+					} `json:"Policies"`
+				}{}
 				preAuditingCSV, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
 					logger.Log.Error(err.Error())
 					break
 				}
 				if len(check.Results) == 0 && len(preAuditingCSV.Results) == 0 {
-					utils.Error("[!] The audit trail target CSV file (CSVTEXTFILE) is not configured.\n")
+					message = "[!] The audit trail target CSV file (CSVTEXTFILE) is not configured.\n"
+					check.IssuesPresent = true
 				} else {
-					utils.Ok("[+] Auditing of CSV files is enabled. The following policies have been detected:\n")
+					message = "[+] Auditing of CSV files is enabled. The following policies have been detected.\n"
+					check.IssuesPresent = false
 					if len(preAuditingCSV.Results) > 0 {
 						for _, r := range preAuditingCSV.Results {
-							fmt.Printf(
+							fileName := r["FILE_NAME"].(string)
+							section := r["SECTION"].(string)
+							key := r["KEY"].(string)
+							value := r["VALUE"].(string)
+							configFiles = append(configFiles, struct {
+								FileName string "json:\"FileName\""
+								Section  string "json:\"Section\""
+								Key      string "json:\"Key\""
+								Value    string "json:\"Value\""
+							}{
+								FileName: fileName,
+								Section:  section,
+								Key:      key,
+								Value:    value,
+							})
+							info += fmt.Sprintf(
 								"  - File: %s, Section: %s, Key: %s, Value: %s\n",
-								r["FILE_NAME"].(string),
-								r["SECTION"].(string),
-								r["KEY"].(string),
-								r["VALUE"].(string),
+								fileName,
+								section,
+								key,
+								value,
 							)
 						}
 					}
 					if len(check.Results) > 0 {
 						for _, r := range check.Results {
-							fmt.Printf(
-								"  - Audit policy name: %s (active: %s), User name: %s\n",
-								r["AUDIT_POLICY_NAME"].(string),
-								r["IS_AUDIT_POLICY_ACTIVE"].(string),
-								r["USER_NAME"].(string),
+							auditPolicyName := r["AUDIT_POLICY_NAME"].(string)
+							isPolicyActiveString := r["IS_AUDIT_POLICY_ACTIVE"].(string)
+							userName := r["USER_NAME"].(string)
+							isPolicyActive := isPolicyActiveString == "true"
+							policies = append(policies, struct {
+								PolicyName string "json:\"PolicyName\""
+								Active     bool   "json:\"Active\""
+								UserName   string "json:\"UserName\""
+							}{
+								PolicyName: auditPolicyName,
+								Active:     isPolicyActive,
+								UserName:   userName,
+							})
+							info += fmt.Sprintf(
+								"  - Audit policy name: %s (active: %t), User name: %s\n",
+								auditPolicyName,
+								isPolicyActive,
+								userName,
 							)
 						}
 					}
+					resources.ConfigurationFiles = configFiles
+					resources.Policies = policies
 				}
-				utils.Warning("CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n")
-				fmt.Println("  - The default audit trail target is syslog (SYSLOGPROTOCOL) for the system database. If you are using syslog, ensure that it is installed and configured according to your requirements (for example, for writing the audit trail to a remote server). [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%3A-syslog]")
+				affectedResources = append(affectedResources, struct {
+					Resources struct {
+						ConfigurationFiles []struct {
+							FileName string `json:"FileName"`
+							Section  string `json:"Section"`
+							Key      string `json:"Key"`
+							Value    string `json:"Value"`
+						} `json:"ConfigurationFiles"`
+						Policies []struct {
+							PolicyName string `json:"PolicyName"`
+							Active     bool   `json:"Active"`
+							UserName   string `json:"UserName"`
+						} `json:"Policies"`
+					}
+				}{
+					Resources: resources,
+				})
+				// Convert affectedResources to []interface{}
+				var resourcesAsInterface []interface{}
+				for _, res := range affectedResources {
+					resourcesAsInterface = append(resourcesAsInterface, res)
+				}
+				caveat += "CAVEAT!! To ensure you thoroughly checked the configuration perform the following manual controls.\n"
+				caveat += "  - The default audit trail target is syslog (SYSLOGPROTOCOL) for the system database. If you are using syslog, ensure that it is installed and configured according to your requirements (for example, for writing the audit trail to a remote server). [https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#audit-trail-target%%3A-syslog]"
+				check.Out = message
+				check.Caveat = caveat
+				check.AffectedResources = resourcesAsInterface
 			case "InternalHostnameResolutionSingle": // output: todo
 				if len(check.Results) == 0 {
 					utils.Error("[!] In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.")
@@ -688,6 +782,9 @@ func EvaluateResults(checkType CheckType) {
 				if info != "" {
 					utils.Info(info)
 				}
+			}
+			if check.Caveat != "" {
+				utils.Warning(check.Caveat)
 			}
 			fmt.Println("\n-----------")
 		} else if check.Type == SSHType {
