@@ -8,18 +8,8 @@ import (
 	"hana/logger"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
-)
-
-var (
-	dbPort            int
-	dbUsername        string
-	dbPassword        string
-	outputPath        string
-	jsonOutput        string
-	defaultJSONOutput string
 )
 
 var queryCmd = &cobra.Command{
@@ -84,19 +74,6 @@ func validateDBFlags() error {
 		if jsonOutput == "" {
 			jsonOutput = defaultJSONOutput
 		}
-	}
-	return nil
-}
-
-func prepareOutputFolder() error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("reading CWD: %s", err.Error())
-	}
-	outputPath = filepath.Join(cwd, fmt.Sprintf("%s_hana_output", time.Now().Format("20060102150405")))
-	err = os.MkdirAll(outputPath, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("creating folder '%s': %s", outputPath, err.Error())
 	}
 	return nil
 }
