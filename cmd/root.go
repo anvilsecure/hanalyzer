@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"hana/checks"
 	"hana/logger"
 	"os"
 
@@ -26,5 +25,4 @@ func Execute() {
 		logger.Log.Error(err.Error())
 		os.Exit(1)
 	}
-	checks.CollectOutput()
 }
