@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"encoding/json"
 	"fmt"
 	"hana/logger"
 	"hana/utils"
@@ -910,7 +911,15 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = "[+] No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n"
 					check.IssuesPresent = false
 				}
-			case "ConfigurationBlacklist": // output: todo
+			case "ConfigurationBlacklist": // output: DONE
+				var affectedResources = []struct {
+					LayerName  string `json:"LAYER_NAME"`
+					TenantName string `json:"TENANT_NAME"`
+					Host       string `json:"HOST"`
+					Section    string `json:"SECTION"`
+					Key        string `json:"Key"`
+					Value      string `json:"VALUE"`
+				}{}
 				ds := tablib.NewDataset([]string{
 					"LAYER_NAME",
 					"TENANT_NAME",
@@ -920,7 +929,9 @@ func EvaluateResults(checkType CheckType) {
 					"VALUE",
 				})
 				if len(check.Results) > 0 {
-					utils.Warning("[!] Please review the following configuration blacklist entries in file multidb.ini.\n")
+					check.IssuesPresent = false
+					check.Out = "[!] Configuration blacklist entries found in file multidb.ini.\n"
+					check.Caveat = "Please review the configuration blacklist entries.\n"
 					for _, f := range check.Results {
 						ds.AppendValues(
 							f["LAYER_NAME"],
@@ -933,8 +944,22 @@ func EvaluateResults(checkType CheckType) {
 					}
 					out := ds.Markdown()
 					fmt.Println(out)
+					jsonString, err := ds.JSON()
+					if err != nil {
+						logger.Log.Errorf("error while converting ds to JSON: %s\n", err.Error())
+					}
+					err = json.Unmarshal([]byte(jsonString), &affectedResources)
+					if err != nil {
+						logger.Log.Errorf("error during JSON unmarshalling: %s\n", err.Error())
+					}
+					var resourcesAsInterface []interface{}
+					for _, resource := range affectedResources {
+						resourcesAsInterface = append(resourcesAsInterface, resource)
+					}
+					check.AffectedResources = resourcesAsInterface
 				} else {
-					log.Fatalln("No configuration found. SAP Hana usually has default configuration. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_INIFILE_CONTENTS\" WHERE FILE_NAME = 'multidb.ini'`")
+					check.Error = fmt.Errorf("no configuration found. SAP Hana usually has default configuration. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_INIFILE_CONTENTS\" WHERE FILE_NAME = 'multidb.ini'`")
+					check.IssuesPresent = false
 				}
 			case "RestrictedFeatures": // output: todo
 				ds := tablib.NewDataset([]string{
