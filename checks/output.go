@@ -106,6 +106,7 @@ func CollectOutput() {
 					Message:   check.Out,
 					Resources: check.AffectedResources,
 					Info:      check.Info,
+					Caveat:    check.Caveat,
 				},
 			})
 		}
