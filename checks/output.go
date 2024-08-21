@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"hana/config"
 	"hana/logger"
+	"os"
 )
 
 /*
@@ -82,7 +83,7 @@ func (check *Check) addCheckResultToOutput(
 	check.AffectedResources = affectedReources
 }
 
-func CollectOutput() {
+func CollectOutput(outputFile string) {
 	Out.ServerIP = config.Conf.Host
 	Out.ServerPort = config.Conf.Database.Port
 	Out.Sid = config.Conf.SID
@@ -115,5 +116,9 @@ func CollectOutput() {
 	if err != nil {
 		logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
 		return
+	}
+	logger.Log.Infof("Writing output data to file: %s\n", outputFile)
+	if err := os.WriteFile(outputFile, jsonData, 0666); err != nil {
+		logger.Log.Errorf("Error while writing output to '%s': %s\n", outputFile, err.Error())
 	}
 }
