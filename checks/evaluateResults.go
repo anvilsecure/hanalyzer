@@ -520,7 +520,7 @@ func EvaluateResults(checkType CheckType) {
 				check.Out = message
 				check.Info = info
 				check.Caveat = caveat
-			case "InternalHostnameResolutionMultiple": // output: todo
+			case "InternalHostnameResolutionMultiple": // output: DONE
 				internal, err := getCheckByName("InternalHostnameResolutionSingle")
 				if err != nil {
 					logger.Log.Error(err.Error())
@@ -530,16 +530,30 @@ func EvaluateResults(checkType CheckType) {
 					v := internal.Results[0]["VALUE"].(string)
 					if v == ".internal" {
 						if len(check.Results) > 0 {
-							utils.Warning("[-] The following hostname are set:\n")
+							caveat = "[-] System has multi-host configuration.\n"
 							for _, r := range check.Results {
-								fmt.Printf("  - %s -> %s\n", r["KEY"].(string), r["VALUE"].(string))
+								key := r["KEY"].(string)
+								value := r["VALUE"].(string)
+								check.AffectedResources = append(check.AffectedResources, struct {
+									Key   string `json:"Key"`
+									Value string `json:"Value"`
+								}{
+									Key:   key,
+									Value: value,
+								})
+								fmt.Printf("  - %s -> %s\n", key, value)
 							}
 						} else {
-							utils.Info("Even if the system is configured as multi host (listeninterface in [communication] section is %s) no hostname was found in [internal_hostname_resolution] section\n", v)
+							check.IssuesPresent = false
+							message = fmt.Sprintf("Even if the system is configured as multi host (listeninterface in [communication] section is %s) no hostname was found in [internal_hostname_resolution] section\n", v)
 						}
 					} else {
+						check.IssuesPresent = false
 						utils.Info("The system is not in multi host configuration, listeninterface value in [communication] section is %s\n", v)
 					}
+					check.Out = message
+					check.Info = info
+					check.Caveat = caveat
 				}
 			case "HostnameResolutionReplication": // output: todo
 				pre0, err := getCheckByName("_pre_0_HostnameResolutionReplication")
