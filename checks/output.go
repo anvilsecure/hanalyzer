@@ -116,6 +116,4 @@ func CollectOutput() {
 		logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
 		return
 	}
-
-	logger.Log.Debugf("\n%s\n", jsonData)
 }

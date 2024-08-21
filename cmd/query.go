@@ -34,6 +34,12 @@ var queryCmd = &cobra.Command{
 				log.Fatalf("error during configuration loading: %s\n", err.Error())
 			}
 		} else {
+			dbPassword = os.Getenv("HANA_DB_PASSWORD")
+			if dbPassword == "" {
+				logger.Log.Error("Environment variable HANA_DB_PASSWORD is empty or not set.")
+				logger.Log.Info("Please provide the DB password by setting it:\nexport HANA_DB_PASSWORD=myverysecretpassword")
+				os.Exit(1)
+			}
 			config.Conf.Host = host
 			config.Conf.SID = SID
 			config.Conf.Database.Port = dbPort
@@ -56,8 +62,7 @@ var queryCmd = &cobra.Command{
 func validateDBFlags() error {
 	if configFile != "" && (host != "" ||
 		SID != "" ||
-		dbUsername != "" ||
-		dbPassword != "") {
+		dbUsername != "") {
 		return fmt.Errorf("error: You cannot use -conf with other CLI flags")
 	}
 	if configFile == "" {
@@ -70,9 +75,6 @@ func validateDBFlags() error {
 		if dbUsername == "" {
 			return fmt.Errorf("error: username required when not using -conf")
 		}
-		if dbPassword == "" {
-			return fmt.Errorf("error: password required when not using -conf")
-		}
 	}
 	return nil
 }
@@ -82,7 +84,6 @@ func init() {
 	queryCmd.Flags().StringVar(&host, "host", "", "Database host")
 	queryCmd.Flags().IntVar(&dbPort, "db-port", 39015, "Database port")
 	queryCmd.Flags().StringVar(&dbUsername, "db-username", "", "Database username")
-	queryCmd.Flags().StringVar(&dbPassword, "db-password", "", "Database password")
 	queryCmd.Flags().StringVar(&SID, "sid", "", "Instance SID")
 	rootCmd.AddCommand(queryCmd)
 }
