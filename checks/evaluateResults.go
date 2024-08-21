@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hana/logger"
 	"hana/utils"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -929,7 +928,7 @@ func EvaluateResults(checkType CheckType) {
 					"VALUE",
 				})
 				if len(check.Results) > 0 {
-					check.IssuesPresent = false
+					check.IssuesPresent = true
 					check.Out = "[!] Configuration blacklist entries found in file multidb.ini.\n"
 					check.Caveat = "Please review the configuration blacklist entries.\n"
 					for _, f := range check.Results {
@@ -961,22 +960,56 @@ func EvaluateResults(checkType CheckType) {
 					check.Error = fmt.Errorf("no configuration found. SAP Hana usually has default configuration. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_INIFILE_CONTENTS\" WHERE FILE_NAME = 'multidb.ini'`")
 					check.IssuesPresent = false
 				}
-			case "RestrictedFeatures": // output: todo
+			case "RestrictedFeatures": // output: DONE
+				var affectedResources = []struct {
+					Name        string `json:"NAME"`
+					Description string `json:"DESCRIPTION"`
+					Enabled     bool   `json:"IS_ENABLED"`
+				}{}
 				ds := tablib.NewDataset([]string{
 					"NAME",
 					"DESCRIPTION",
 				})
 				if len(check.Results) > 0 {
-					utils.Warning("[!] Please review the following customizable functionalities.\n")
+					check.IssuesPresent = true
+					check.Out = "[!] Found customizable functionalities.\n"
+					check.Caveat = "Please review the customizable functionalities.\n"
 					for _, f := range check.Results {
+						name, ok := f["NAME"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of Name '%s' to string", f["NAME"])
+						}
+						description, ok := f["DESCRIPTION"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of Description '%s' to string", f["DESCRIPTION"])
+						}
+						isEnabledString, ok := f["IS_ENABLED"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of IsEnabled '%s' to string", f["IS_ENABLED"])
+						}
+						isEnabled := strings.ToLower(isEnabledString) == "true"
 						ds.AppendTagged(
 							[]interface{}{
-								f["NAME"],
-								f["DESCRIPTION"],
+								name,
+								description,
 							},
-							fmt.Sprintf("%s", f["IS_ENABLED"]),
+							isEnabledString,
 						)
+						affectedResources = append(affectedResources, struct {
+							Name        string "json:\"NAME\""
+							Description string "json:\"DESCRIPTION\""
+							Enabled     bool   "json:\"IS_ENABLED\""
+						}{
+							Name:        name,
+							Description: description,
+							Enabled:     isEnabled,
+						})
 					}
+					var resourcesAsInterface []interface{}
+					for _, feature := range affectedResources {
+						resourcesAsInterface = append(resourcesAsInterface, feature)
+					}
+					check.AffectedResources = resourcesAsInterface
 					enabled := ds.Filter("TRUE")
 					enabledOutput := ""
 					if len(enabled.Dict()) > 0 {
@@ -992,13 +1025,14 @@ func EvaluateResults(checkType CheckType) {
 						fmt.Println(disabledOutput)
 					}
 					if len(disabled.Dict()) == 0 {
-						utils.Info("All features are enabled.\n")
+						check.Info = "All features are enabled.\n"
 					}
 					if len(enabled.Dict()) == 0 {
-						utils.Info("All features are disabled.\n")
+						check.Info = "All features are disabled.\n"
 					}
 				} else {
-					log.Fatalln("No customizable functionalities found. SAP Hana usually has default customizable functionalities. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_CUSTOMIZABLE_FUNCTIONALITIES\"`")
+					check.Error = fmt.Errorf("no customizable functionalities found. SAP Hana usually has default customizable functionalities. Check it manually. The ran query is: `SELECT * FROM \"PUBLIC\". \"M_CUSTOMIZABLE_FUNCTIONALITIES\"`")
+					check.IssuesPresent = false
 				}
 			default:
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)
