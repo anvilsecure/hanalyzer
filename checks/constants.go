@@ -27,6 +27,7 @@ type Check struct {
 	Out               string
 	AffectedResources []interface{}
 	Info              string
+	Caveat            string
 }
 
 type entity struct {

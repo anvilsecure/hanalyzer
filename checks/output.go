@@ -50,6 +50,7 @@ type Result struct {
 	Message   string        `json:"message"`
 	Resources []interface{} `json:"resources"`
 	Info      string        `json:"info"`
+	Caveat    string        `json:"caveat"`
 }
 
 type CheckOutput struct {
