@@ -848,20 +848,67 @@ func EvaluateResults(checkType CheckType) {
 					check.IssuesPresent = false
 					check.Out = "[+] Dump files not found\n"
 				}
-			case "SAMLBasedAuthN": // output: todo
+			case "SAMLBasedAuthN": // output: DONE
+				var affectedResources = []struct {
+					CertPSEID     string `json:"CertPSEID"`
+					CertName      string `json:"CertName"`
+					CertPurpose   string `json:"CertPurpose"`
+					CertOwnerName string `json:"CertOwnerName"`
+				}{}
 				if len(check.Results) > 0 {
-					utils.Warning("[!] The following SAML or SSL certificates were found.\nPlease review them carefully to avoid authentication issues cross-tenant.\n")
-					for _, f := range check.Results {
+					check.IssuesPresent = true
+					check.Out = "[!] Found SAML or SSL certificates.\nPlease review them carefully to avoid authentication issues cross-tenant.\n"
+					for _, cert := range check.Results {
+						certPSEID, ok := cert["PSE_ID"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of certPSEID '%s' to string", cert["PSE_ID"])
+						}
+						certName, ok := cert["NAME"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of certName '%s' to string", cert["NAME"])
+						}
+						certPurpose, ok := cert["PURPOSE"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of certPurpose '%s' to string", cert["PURPOSE"])
+						}
+						certOwnerName, ok := cert["OWNER_NAME"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of certOwnerName '%s' to string", cert["OWNER_NAME"])
+						}
+						affectedResources = append(affectedResources, struct {
+							CertPSEID     string "json:\"CertPSEID\""
+							CertName      string "json:\"CertName\""
+							CertPurpose   string "json:\"CertPurpose\""
+							CertOwnerName string "json:\"CertOwnerName\""
+						}{
+							CertPSEID:     certPSEID,
+							CertName:      certName,
+							CertPurpose:   certPurpose,
+							CertOwnerName: certOwnerName,
+						})
 						utils.Info(fmt.Sprintf(
 							"%-20s %-20s %-20s %-s\n",
-							f["PSE_ID"],
-							f["NAME"],
-							f["PURPOSE"],
-							f["OWNER_NAME"],
+							certPSEID,
+							certName,
+							certPurpose,
+							certOwnerName,
 						))
+						var resourcesAsInterface []interface{}
+						for _, resource := range affectedResources {
+							resourcesAsInterface = append(resourcesAsInterface, resource)
+							utils.Info(fmt.Sprintf(
+								"%-20s %-20s %-20s %-s\n",
+								resource.CertPSEID,
+								resource.CertName,
+								resource.CertPurpose,
+								resource.CertOwnerName,
+							))
+						}
+						check.AffectedResources = resourcesAsInterface
 					}
 				} else {
-					utils.Ok("[+] No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n")
+					check.Out = "[+] No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n"
+					check.IssuesPresent = false
 				}
 			case "ConfigurationBlacklist": // output: todo
 				ds := tablib.NewDataset([]string{
