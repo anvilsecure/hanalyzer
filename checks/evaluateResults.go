@@ -632,7 +632,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = fmt.Sprintf("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 					check.IssuesPresent = false
 				}
-			case "SystemPKISSFSMasterKey": // output: todo
+			case "SystemPKISSFSMasterKey": // output: DONE
 				if len(check.Results) == 0 {
 					check.Out = "[!] System PKI SSFS Master Key has never been rotated.\n"
 					check.IssuesPresent = true
@@ -640,13 +640,15 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = fmt.Sprintf("[+] System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 					check.IssuesPresent = false
 				}
-			case "PasswordHashMethods": // output: todo
+			case "PasswordHashMethods": // output: DONE
 				if len(check.Results) == 0 ||
 					(len(check.Results) == 1 &&
 						strings.Contains(strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])), "sha256")) {
-					utils.Warning("[!] Legacy and deprecated password storage method in use (SHA256).\n")
+					check.Out = "[!] Legacy and deprecated password storage method in use (SHA256).\n"
+					check.IssuesPresent = true
 				} else if len(check.Results) == 1 && strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])) == "pbkdf2" {
-					utils.Warning("[+] All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n")
+					check.Out = "[+] All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n"
+					check.IssuesPresent = false
 				}
 			case "RootEncryptionKeys": // output: todo
 				for _, record := range check.Results {
