@@ -748,7 +748,12 @@ func EvaluateResults(checkType CheckType) {
 						check.Out = fmt.Sprintf("[!] Encryption of %s is disabled.\n", dict[scope])
 					}
 				}
-			case "TraceFiles": // output: todo
+			case "TraceFiles": // output: DONE
+				var affectedResources = []struct {
+					FileName  string `json:"FileName"`
+					FileSize  int64  `json:"FileSize"`
+					FileMTime string `json:"FileMTime"`
+				}{}
 				pre0, err := getCheckByName("_pre_0_TraceFiles")
 				if err != nil {
 					logger.Log.Error(err.Error())
@@ -756,17 +761,45 @@ func EvaluateResults(checkType CheckType) {
 				}
 				out := check.Results
 				if len(pre0.Results) > 0 && len(out) > 0 {
-					utils.Warning("[!] Trace files found\n")
-					for _, f := range out {
+					check.IssuesPresent = true
+					check.Out = "[!] Trace files found.\n"
+					for _, file := range out {
+						fileSize, ok := file["FILE_SIZE"].(int64)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of fileSize '%s' to string", file["FILE_SIZE"])
+						}
+						fileMTime, ok := file["FILE_MTIME"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of fileMTime '%s' to string", file["FILE_MTIME"])
+						}
+						fileName, ok := file["FILE_NAME"].(string)
+						if !ok {
+							logger.Log.Errorf("Error during assertion of fileName '%s' to string", file["FILE_NAME"])
+						}
+						affectedResources = append(affectedResources, struct {
+							FileName  string "json:\"FileName\""
+							FileSize  int64  "json:\"FileSize\""
+							FileMTime string "json:\"FileMTime\""
+						}{
+							FileName:  fileName,
+							FileSize:  fileSize,
+							FileMTime: fileMTime,
+						})
+					}
+					var resourcesAsInterface []interface{}
+					for _, resource := range affectedResources {
+						resourcesAsInterface = append(resourcesAsInterface, resource)
 						utils.Info(fmt.Sprintf(
 							"%-20s %-20s %-s\n",
-							fmt.Sprintf("%-10d byte", f["FILE_SIZE"]),
-							f["FILE_MTIME"],
-							f["FILE_NAME"],
+							fmt.Sprintf("%-10d byte", resource.FileSize),
+							resource.FileMTime,
+							resource.FileName,
 						))
 					}
+					check.AffectedResources = resourcesAsInterface
 				} else {
-					utils.Ok("[+] Trace files not found\n")
+					check.IssuesPresent = false
+					check.Out = "[+] Trace files not found\n"
 				}
 			case "DumpFiles": // output: todo
 				if len(check.Results) > 0 {
