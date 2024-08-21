@@ -79,12 +79,7 @@ func validateDBFlags() error {
 }
 
 func init() {
-	err := prepareOutputFolder()
-	if err != nil {
-		logger.Log.Errorf("Error while preparing output folder: %s\n", err.Error())
-		os.Exit(1)
-	}
-	defaultJSONOutput = filepath.Join(outputPath, "out.json")
+	defaultJSONOutput = filepath.Join(logger.Log.OutputPath, "out.json")
 	queryCmd.Flags().StringVar(&configFile, "conf", "", "Provide configuration file (required if --host, --db-port, --db-username, --db-password, and --sid are not provided by CLI)")
 	queryCmd.Flags().StringVar(&host, "host", "", "Database host")
 	queryCmd.Flags().IntVar(&dbPort, "db-port", 39015, "Database port")

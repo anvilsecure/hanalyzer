@@ -75,12 +75,7 @@ func validateSSHFlags() error {
 }
 
 func init() {
-	err := prepareOutputFolder()
-	if err != nil {
-		logger.Log.Errorf("Error while preparing output folder: %s\n", err.Error())
-		os.Exit(1)
-	}
-	defaultJSONOutput = filepath.Join(outputPath, "out.json")
+	defaultJSONOutput = filepath.Join(logger.Log.OutputPath, "out.json")
 	sshCmd.Flags().StringVar(&configFile, "conf", "", "Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)")
 	sshCmd.Flags().StringVar(&host, "host", "", "Database host")
 	sshCmd.Flags().IntVar(&sshPort, "ssh-port", 22, "SSH username")

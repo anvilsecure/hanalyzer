@@ -3,6 +3,7 @@ package logger
 
 import (
 	"fmt"
+	"hana/utils"
 	"io"
 	"log"
 	"os"
@@ -28,9 +29,10 @@ const (
 
 // Logger struct defines the logger.
 type Logger struct {
-	writer   io.Writer
-	file     *os.File
-	filePath string
+	writer     io.Writer
+	file       *os.File
+	filePath   string
+	OutputPath string
 }
 
 // NewLogger creates a new Logger.
@@ -42,9 +44,14 @@ func NewLogger() *Logger {
 
 // Init initializes the logger and sets up the file for WARN messages.
 func init() {
+	var err error
+	Log.OutputPath, err = utils.PrepareOutputFolder()
+	if err != nil {
+		log.Fatalf("error while preparing output folder: %s\n", err.Error())
+	}
 	currentTime := time.Now().Format("01022006_150405")
 	fileName := fmt.Sprintf("saphanalyzer_warnings_%s.log", currentTime)
-	Log.filePath = filepath.Join(".", fileName)
+	Log.filePath = filepath.Join(Log.OutputPath, fileName)
 	file, err := os.OpenFile(Log.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("error opening file: %s", err.Error())
