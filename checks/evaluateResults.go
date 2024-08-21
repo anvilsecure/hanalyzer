@@ -499,21 +499,27 @@ func EvaluateResults(checkType CheckType) {
 				check.Out = message
 				check.Caveat = caveat
 				check.AffectedResources = resourcesAsInterface
-			case "InternalHostnameResolutionSingle": // output: todo
+			case "InternalHostnameResolutionSingle": // output: DONE
 				if len(check.Results) == 0 {
-					utils.Error("[!] In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.")
+					check.IssuesPresent = true
+					message = "[!] In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.\n"
 				} else if len(check.Results) == 1 {
 					v := check.Results[0]["VALUE"].(string)
 					if v == ".local" {
-						utils.Ok("In global.ini files, the [communication] listeninterface is set to %s.\n", v)
+						check.IssuesPresent = false
+						message = fmt.Sprintf("In global.ini files, the [communication] listeninterface is set to %s.\n", v)
 					} else {
-						utils.Error("In global.ini files, the [communication] listeninterface is set to %s.\n", v)
+						check.IssuesPresent = true
+						message = fmt.Sprintf("In global.ini files, the [communication] listeninterface is set to %s.\n", v)
 						if v == ".global" {
-							utils.Warning("If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n")
+							caveat = "If the listeninterface parameter is set to .global, we strongly recommend that you secure the SAP HANA servers with additional measures such as a firewall and/or TLS/SSL. Otherwise, the internal service ports of the system are exposed and can be used to attack SAP HANA.\n"
 						}
 					}
 				}
-				utils.Info("Further information about possible values at: https://help.sap.com/docs/SAP_HANA_PLATFORM/6b94445c94ae495c83a19646e7c3fd56/3fd4912896284029931997903c75d956.html\n")
+				info = "Further information about possible values at: https://help.sap.com/docs/SAP_HANA_PLATFORM/6b94445c94ae495c83a19646e7c3fd56/3fd4912896284029931997903c75d956.html\n"
+				check.Out = message
+				check.Info = info
+				check.Caveat = caveat
 			case "InternalHostnameResolutionMultiple": // output: todo
 				internal, err := getCheckByName("InternalHostnameResolutionSingle")
 				if err != nil {
