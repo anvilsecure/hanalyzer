@@ -6,16 +6,20 @@ import (
 	"hana/config"
 	"hana/db"
 	"hana/logger"
-	"log"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	dbPort     int
-	dbUsername string
-	dbPassword string
+	dbPort            int
+	dbUsername        string
+	dbPassword        string
+	outputPath        string
+	jsonOutput        string
+	defaultJSONOutput string
 )
 
 var queryCmd = &cobra.Command{
@@ -31,7 +35,8 @@ var queryCmd = &cobra.Command{
 		if configFile != "" {
 			err := config.LoadConfig(configFile)
 			if err != nil {
-				log.Fatalf("error during configuration loading: %s\n", err.Error())
+				logger.Log.Errorf("Error during configuration loading: %s\n", err.Error())
+				os.Exit(1)
 			}
 		} else {
 			dbPassword = os.Getenv("HANA_DB_PASSWORD")
@@ -56,6 +61,7 @@ var queryCmd = &cobra.Command{
 				checks.SkippedChecks = append(checks.SkippedChecks, check)
 			}
 		}
+		checks.CollectOutput(jsonOutput)
 	},
 }
 
@@ -75,15 +81,38 @@ func validateDBFlags() error {
 		if dbUsername == "" {
 			return fmt.Errorf("error: username required when not using -conf")
 		}
+		if jsonOutput == "" {
+			jsonOutput = defaultJSONOutput
+		}
+	}
+	return nil
+}
+
+func prepareOutputFolder() error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("reading CWD: %s", err.Error())
+	}
+	outputPath = filepath.Join(cwd, fmt.Sprintf("%s_hana_output", time.Now().Format("20060102150405")))
+	err = os.MkdirAll(outputPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("creating folder '%s': %s", outputPath, err.Error())
 	}
 	return nil
 }
 
 func init() {
+	err := prepareOutputFolder()
+	if err != nil {
+		logger.Log.Errorf("Error while preparing output folder: %s\n", err.Error())
+		os.Exit(1)
+	}
+	defaultJSONOutput = filepath.Join(outputPath, "out.json")
 	queryCmd.Flags().StringVar(&configFile, "conf", "", "Provide configuration file (required if --host, --db-port, --db-username, --db-password, and --sid are not provided by CLI)")
 	queryCmd.Flags().StringVar(&host, "host", "", "Database host")
 	queryCmd.Flags().IntVar(&dbPort, "db-port", 39015, "Database port")
 	queryCmd.Flags().StringVar(&dbUsername, "db-username", "", "Database username")
 	queryCmd.Flags().StringVar(&SID, "sid", "", "Instance SID")
+	queryCmd.Flags().StringVar(&jsonOutput, "json-output", "", "JSON output file")
 	rootCmd.AddCommand(queryCmd)
 }
