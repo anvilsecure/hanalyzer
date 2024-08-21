@@ -247,7 +247,7 @@ func EvaluateResults(checkType CheckType) {
 							Privileges: entity.Privileges,
 						})
 					}
-					info += printGrantees(grantees) // TOFIX
+					check.Info += printGrantees(grantees)
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
