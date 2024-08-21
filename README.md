@@ -37,6 +37,8 @@ Use "saphanalyzer [command] --help" for more information about a command.
 ### Query mode
 Most of the checks are performed via DB queries.
 
+> The DB password must be exported to environment variable HANA_DB_PASSWORD to avoid passing it via CLI arguments
+
 ```bash
 $ saphanalyzer -h
 Perform checks by querying the DB.
@@ -46,12 +48,13 @@ Usage:
 
 Flags:
       --conf string          Provide configuration file (required if --host, --db-port, --db-username, --db-password, and --sid are not provided by CLI)
-      --db-password string   Database password
       --db-port int          Database port (default 39015)
       --db-username string   Database username
   -h, --help                 help for query
       --host string          Database host
+      --json-output string   JSON output file
       --sid string           Instance SID
+
 ```
 
 You can use a configuration file (`--conf <file.yml>`) or provide the required parameters via flag ([Query mode examples](#query-mode-examples)).
@@ -59,6 +62,8 @@ You can use a configuration file (`--conf <file.yml>`) or provide the required p
 
 ### SSH mode
 One check is performed by issuing a command via SSH.
+
+> The SSH password must be exported to environment variable HANA_SSH_PASSWORD to avoid passing it via CLI arguments
 
 ```bash
 $ saphanalyzer -h
@@ -72,7 +77,7 @@ Flags:
       --conf string           Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)
   -h, --help                  help for ssh
       --host string           Database host
-      --ssh-password string   SSH password
+      --json-output string    JSON output file
       --ssh-port int          SSH username (default 22)
       --ssh-username string   SSH username
 ```
