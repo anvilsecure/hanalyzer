@@ -87,7 +87,7 @@ func EvaluateResults(checkType CheckType) {
 					check.IssuesPresent = true
 					check.AffectedResources = affectedResources
 				}
-			case "SystemPrivileges": // output: TOFIX
+			case "SystemPrivileges": // output: DONE
 				var affectedResources = []struct {
 					Entity     string   `json:"Entity"`
 					EntityType string   `json:"EntityType"`
@@ -101,7 +101,7 @@ func EvaluateResults(checkType CheckType) {
 					}
 					privileges := make(map[string][]entity)
 					message = "[!] Found entities (users/roles) that might have too high privileges.\n"
-					info = "[I] Breakdown per grantee\n"
+					check.Info = "[I] Breakdown per grantee\n"
 					for k, grantee := range grantees {
 						affectedResources = append(affectedResources, struct {
 							Entity     string   "json:\"Entity\""
@@ -122,14 +122,13 @@ func EvaluateResults(checkType CheckType) {
 					}
 					check.AffectedResources = append(check.AffectedResources, affectedResources)
 					check.Out = "[!] Found entities (users/roles) that might have too high privileges.\n"
-					check.Info = "[I] Breakdown per grantee"
 					check.IssuesPresent = true
 
-					info += "[I] Breakdown per privilege\n"
+					check.Info += "[I] Breakdown per privilege\n"
 					for privilege, entities := range privileges {
-						info += fmt.Sprintf("  - %s\n", privilege)
+						check.Info += fmt.Sprintf("  - %s\n", privilege)
 						for _, entity := range entities {
-							info += fmt.Sprintf("    - %s (type: %s)\n", entity.Name, entity.Type)
+							check.Info += fmt.Sprintf("    - %s (type: %s)\n", entity.Name, entity.Type)
 						}
 					}
 				} else {
