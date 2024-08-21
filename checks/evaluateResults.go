@@ -1058,11 +1058,16 @@ func EvaluateResults(checkType CheckType) {
 			utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
 			case "EncryptionKeySAPHANASecureUserStore":
-				out := check.Results[0]["stdOut"].(string)
+				out, ok := check.Results[0]["stdOut"].(string)
+				if !ok {
+					logger.Log.Errorf("Error during assertion of SSH stdOut '%s' to string", check.Results[0]["stdOut"])
+				}
 				if strings.Contains(out, "KEY FILE") {
-					utils.Ok("[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.\n")
+					check.IssuesPresent = false
+					check.Out = "[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.\n"
 				} else {
-					utils.Error("[!] Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n")
+					check.IssuesPresent = true
+					check.Out = "[!] Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n"
 				}
 			default:
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)
