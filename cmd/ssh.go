@@ -8,14 +8,9 @@ import (
 	"hana/ssh"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
-)
-
-var (
-	sshUsername string
-	sshPassword string
-	sshPort     int
 )
 
 var sshCmd = &cobra.Command{
@@ -34,6 +29,12 @@ var sshCmd = &cobra.Command{
 				log.Fatalf("error during configuration loading: %s\n", err.Error())
 			}
 		} else {
+			sshPassword = os.Getenv("HANA_SSH_PASSWORD")
+			if sshPassword == "" {
+				logger.Log.Error("Environment variable HANA_SSH_PASSWORD is empty or not set.")
+				logger.Log.Info("Please provide the DB password by setting it:\nexport HANA_SSH_PASSWORD=myverysecretpassword")
+				os.Exit(1)
+			}
 			config.Conf.Host = host
 			config.Conf.SSH.Port = sshPort
 			config.Conf.SSH.Username = sshUsername
@@ -43,6 +44,13 @@ var sshCmd = &cobra.Command{
 		checks.CreateChecks(checkType)
 		checks.ExecuteChecks(checkType)
 		checks.EvaluateResults(checkType)
+		for _, check := range checks.CheckList {
+			if check.Error != nil {
+				logger.Log.Warnf("error occurred to check \"%s\": %s\n", check.Name, check.Error.Error())
+				checks.SkippedChecks = append(checks.SkippedChecks, check)
+			}
+		}
+		checks.CollectOutput(jsonOutput)
 	},
 }
 
@@ -59,18 +67,24 @@ func validateSSHFlags() error {
 		if sshUsername == "" {
 			return fmt.Errorf("error: username required when not using -conf")
 		}
-		if sshPassword == "" {
-			return fmt.Errorf("error: password required when not using -conf")
+		if jsonOutput == "" {
+			jsonOutput = defaultJSONOutput
 		}
 	}
 	return nil
 }
 
 func init() {
+	err := prepareOutputFolder()
+	if err != nil {
+		logger.Log.Errorf("Error while preparing output folder: %s\n", err.Error())
+		os.Exit(1)
+	}
+	defaultJSONOutput = filepath.Join(outputPath, "out.json")
 	sshCmd.Flags().StringVar(&configFile, "conf", "", "Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)")
 	sshCmd.Flags().StringVar(&host, "host", "", "Database host")
 	sshCmd.Flags().IntVar(&sshPort, "ssh-port", 22, "SSH username")
 	sshCmd.Flags().StringVar(&sshUsername, "ssh-username", "", "SSH username")
-	sshCmd.Flags().StringVar(&sshPassword, "ssh-password", "", "SSH password")
+	sshCmd.Flags().StringVar(&jsonOutput, "json-output", "", "JSON output file")
 	rootCmd.AddCommand(sshCmd)
 }
