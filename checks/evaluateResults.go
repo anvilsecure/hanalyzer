@@ -624,12 +624,15 @@ func EvaluateResults(checkType CheckType) {
 					check.Info = info
 					check.Caveat = caveat
 				}
-			case "InstanceSSFSMasterKey": // output: todo
+			case "InstanceSSFSMasterKey": // output: DONE
 				if len(check.Results) == 0 {
-					utils.Error("[!] Instance SSFS Master Key has never been rotated.\n")
+					message = "[!] Instance SSFS Master Key has never been rotated.\n"
+					check.IssuesPresent = true
 				} else {
-					utils.Ok("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					message = fmt.Sprintf("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					check.IssuesPresent = false
 				}
+				check.Out = message
 			case "SystemPKISSFSMasterKey": // output: todo
 				if len(check.Results) == 0 {
 					utils.Error("[!] System PKI SSFS Master Key has never been rotated.\n")
