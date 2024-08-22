@@ -23,12 +23,13 @@ type Result struct {
 }
 
 type CheckOutput struct {
-	CheckName string   `json:"check_name"`
-	CheckType string   `json:"check_type"`
-	Errors    bool     `json:"errors"`
-	ErrorList []string `json:"error_list"`
-	Issues    bool     `json:"issues"`
-	Result    Result   `json:"result"`
+	CheckName     string   `json:"check_name"`
+	CheckType     string   `json:"check_type"`
+	CheckCategory string   `json:"check_category"`
+	Errors        bool     `json:"errors"`
+	ErrorList     []string `json:"error_list"`
+	Issues        bool     `json:"issues"`
+	Result        Result   `json:"result"`
 }
 
 type Output struct {
@@ -43,6 +44,17 @@ type Output struct {
 // Function to check if a string starts with a given prefix
 func hasPrefix(s, prefix string) bool {
 	return strings.HasPrefix(s, prefix)
+}
+
+// groupByCategory groups checks by their category and returns a map of category names to checks
+func groupByCategory(checks []CheckOutput, checkType string) map[string][]CheckOutput {
+	grouped := make(map[string][]CheckOutput)
+	for _, check := range checks {
+		if check.CheckType == checkType {
+			grouped[check.CheckCategory] = append(grouped[check.CheckCategory], check)
+		}
+	}
+	return grouped
 }
 
 func Render(path string) {
@@ -67,7 +79,8 @@ func Render(path string) {
 	}
 	tmpFileName := filepath.Join(cwd, "static/template.html")
 	tmpl, err := template.New("webpage").Funcs(template.FuncMap{
-		"hasPrefix": hasPrefix,
+		"groupByCategory": groupByCategory,
+		"hasPrefix":       hasPrefix,
 	}).ParseFiles(tmpFileName)
 	if err != nil {
 		panic(err)

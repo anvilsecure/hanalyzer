@@ -44,36 +44,39 @@
 
                 <!-- Query Checks List -->
                 <h2 class="mt-4">Query Checks</h2>
-                {{range $index, $check := .Checks}}
-                    {{if and (eq $check.CheckType "query") (not (hasPrefix $check.CheckName "_pre"))}}
-                    <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}">
-                        <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
-                            <h3 class="card-title">
-                                <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapse{{$index}}" aria-expanded="false" aria-controls="collapse{{$index}}">
-                                    {{ $check.CheckName }}
-                                </button>
-                            </h3>
-                        </div>
-                        <div id="collapse{{$index}}" class="collapse">
-                            <div class="card-body">
-                                <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
-                                {{ if $check.Errors }}
-                                    <p><strong>Error List:</strong></p>
-                                    <ul class="list-group mb-3">
-                                        {{range $check.ErrorList}}
-                                        <li class="list-group-item">{{.}}</li>
+                {{range $category, $checks := groupByCategory .Checks "query"}}
+                    <h3 class="mt-4">{{ $category }}</h3>
+                    {{range $index, $check := $checks}}
+                        {{if and (eq $check.CheckType "query") (not (hasPrefix $check.CheckName "_pre"))}}
+                            <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}">
+                                <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
+                                    <h3 class="card-title">
+                                        <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapseQuery{{$index}}" aria-expanded="false" aria-controls="collapseQuery{{$index}}">
+                                            {{ $check.CheckName }}
+                                        </button>
+                                    </h3>
+                                </div>
+                                <div id="collapseQuery{{$index}}" class="collapse">
+                                    <div class="card-body">
+                                        <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
+                                        {{ if $check.Errors }}
+                                            <p><strong>Error List:</strong></p>
+                                            <ul class="list-group mb-3">
+                                                {{range $check.ErrorList}}
+                                                <li class="list-group-item">{{.}}</li>
+                                                {{end}}
+                                            </ul>
                                         {{end}}
-                                    </ul>
-                                {{end}}
-                                <h4 class="mt-4">Result</h4>
-                                <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
-                                <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
-                                <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
-                                <h5 class="mt-4">Resources</h5>
-                                {{.Result.Resources}}
+                                        <h4 class="mt-4">Result</h4>
+                                        <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
+                                        <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
+                                        <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
+                                        <h5 class="mt-4">Resources</h5>
+                                        {{.Result.Resources}}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        {{end}}
                     {{end}}
                 {{end}}
             </div>
@@ -92,36 +95,39 @@
 
             <!-- SSH Checks List -->
             <h2 class="mt-4">SSH Checks</h2>
-            {{range $index, $check := .Checks}}
-                {{if and (eq $check.CheckType "ssh") (not (hasPrefix $check.CheckName "_pre"))}}
-                <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}">
-                    <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
-                        <h3 class="card-title">
-                            <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapse{{$index}}" aria-expanded="false" aria-controls="collapse{{$index}}">
-                                {{ $check.CheckName }}
-                            </button>
-                        </h3>
-                    </div>
-                    <div id="collapse{{$index}}" class="collapse">
-                        <div class="card-body">
-                            <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
-                            {{ if $check.Errors }}
-                                <p><strong>Error List:</strong></p>
-                                <ul class="list-group mb-3">
-                                    {{range $check.ErrorList}}
-                                    <li class="list-group-item">{{.}}</li>
+            {{range $category, $checks := groupByCategory .Checks "ssh"}}
+                <h3 class="mt-4">{{ $category }}</h3>
+                {{range $index, $check := $checks}}
+                    {{if and (eq $check.CheckType "ssh") (not (hasPrefix $check.CheckName "_pre"))}}
+                        <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}">
+                            <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
+                                <h3 class="card-title">
+                                    <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapseSSH{{$index}}" aria-expanded="false" aria-controls="collapseSSH{{$index}}">
+                                        {{ $check.CheckName }}
+                                    </button>
+                                </h3>
+                            </div>
+                            <div id="collapseSSH{{$index}}" class="collapse">
+                                <div class="card-body">
+                                    <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
+                                    {{ if $check.Errors }}
+                                        <p><strong>Error List:</strong></p>
+                                        <ul class="list-group mb-3">
+                                            {{range $check.ErrorList}}
+                                            <li class="list-group-item">{{.}}</li>
+                                            {{end}}
+                                        </ul>
                                     {{end}}
-                                </ul>
-                            {{end}}
-                            <h4 class="mt-4">Result</h4>
-                            <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
-                            <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
-                            <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
-                            <h5 class="mt-4">Resources</h5>
-                            {{.Result.Resources}}
+                                    <h4 class="mt-4">Result</h4>
+                                    <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
+                                    <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
+                                    <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
+                                    <h5 class="mt-4">Resources</h5>
+                                    {{.Result.Resources}}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    {{end}}
                 {{end}}
             {{end}}
         </div>
