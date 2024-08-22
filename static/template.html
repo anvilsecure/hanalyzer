@@ -29,19 +29,7 @@
             </li>
         </ul>
         <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
-                <!-- Filter for SSH Checks -->
-                <h2 class="mt-4">Filters</h2>
-                <div class="form-group">
-                    <label for="sshIssueFilter">Filter by Issues:</label>
-                    <select id="sshIssueFilter" class="form-control">
-                        <option value="all">All</option>
-                        <option value="true">Has Issues</option>
-                        <option value="false">No Issues</option>
-                    </select>
-                </div>
 
-                
             <div class="tab-pane fade" id="query" role="tabpanel" aria-labelledby="query-tab">
                 <!-- Filter for Query Checks -->
                 <h2 class="mt-4">Filters</h2>
@@ -90,6 +78,18 @@
                 {{end}}
             </div>
 
+            <div class="tab-pane fade show active" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
+                <!-- Filter for SSH Checks -->
+                <h2 class="mt-4">Filters</h2>
+                <div class="form-group">
+                    <label for="sshIssueFilter">Filter by Issues:</label>
+                    <select id="sshIssueFilter" class="form-control">
+                        <option value="all">All</option>
+                        <option value="true">Has Issues</option>
+                        <option value="false">No Issues</option>
+                    </select>
+                </div>
+
             <!-- SSH Checks List -->
             <h2 class="mt-4">SSH Checks</h2>
             {{range $index, $check := .Checks}}
@@ -104,7 +104,7 @@
                     </div>
                     <div id="collapse{{$index}}" class="collapse">
                         <div class="card-body">
-                            <p><strong>Errors:</strong> {{ $check.Errors }}</p>
+                            <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
                             {{ if $check.Errors }}
                                 <p><strong>Error List:</strong></p>
                                 <ul class="list-group mb-3">
@@ -112,8 +112,6 @@
                                     <li class="list-group-item">{{.}}</li>
                                     {{end}}
                                 </ul>
-                            {{else}}
-                                <p>No errors found.</p>
                             {{end}}
                             <h4 class="mt-4">Result</h4>
                             <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
