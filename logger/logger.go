@@ -3,7 +3,6 @@ package logger
 
 import (
 	"fmt"
-	"hana/utils"
 	"io"
 	"log"
 	"os"
@@ -17,7 +16,7 @@ import (
 type LogLevel int
 
 var (
-	Log *Logger = NewLogger()
+	Log *Logger
 )
 
 const (
@@ -29,43 +28,36 @@ const (
 
 // Logger struct defines the logger.
 type Logger struct {
-	writer     io.Writer
-	file       *os.File
-	filePath   string
-	OutputPath string
+	Writer       io.Writer
+	File         *os.File
+	FilePath     string
+	OutputFolder string
 }
 
 // NewLogger creates a new Logger.
-func NewLogger() *Logger {
-	return &Logger{
-		writer: os.Stderr,
-	}
-}
-
-// Init initializes the logger and sets up the file for WARN messages.
-func init() {
-	var err error
-	Log.OutputPath, err = utils.PrepareOutputFolder()
-	if err != nil {
-		log.Fatalf("error while preparing output folder: %s\n", err.Error())
-	}
+func NewLogger(outputPath string) *Logger {
 	currentTime := time.Now().Format("01022006_150405")
 	fileName := fmt.Sprintf("saphanalyzer_warnings_%s.log", currentTime)
-	Log.filePath = filepath.Join(Log.OutputPath, fileName)
-	file, err := os.OpenFile(Log.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	filePath := filepath.Join(outputPath, fileName)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("error opening file: %s", err.Error())
 	}
-	Log.file = file
+	return &Logger{
+		Writer:       os.Stderr,
+		File:         file,
+		FilePath:     filePath,
+		OutputFolder: outputPath,
+	}
 }
 
 func (l *Logger) CloseFile() {
-	if l.file != nil {
-		l.file.Close()
+	if l.File != nil {
+		l.File.Close()
 		if l.isFileEmpty() {
-			os.Remove(l.filePath)
+			os.Remove(l.FilePath)
 		}
-		l.file = nil
+		l.File = nil
 	}
 }
 
@@ -87,12 +79,12 @@ func (l *Logger) logMessage(level LogLevel, message string) {
 	case WARN:
 		logPrefix = "[WARN]"
 		colorMessage = color.New(color.FgYellow).Sprintf("%s %s %s", logPrefix, currentTime, message)
-		if l.file != nil {
+		if l.File != nil {
 			l.logToFile(logPrefix, currentTime, message)
 		}
 	}
 
-	fmt.Fprintln(l.writer, colorMessage)
+	fmt.Fprintln(l.Writer, colorMessage)
 }
 
 // logMessagef logs a formatted message with the given log level and color.
@@ -143,15 +135,15 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 
 // logToFile logs a message to a file.
 func (l *Logger) logToFile(logPrefix, currentTime, message string) {
-	if l.file != nil {
+	if l.File != nil {
 		logMessage := fmt.Sprintf("%s %s %s", logPrefix, currentTime, message)
-		fmt.Fprintln(l.file, logMessage)
+		fmt.Fprintln(l.File, logMessage)
 	}
 }
 
 // isFileEmpty checks if the log file is empty.
 func (l *Logger) isFileEmpty() bool {
-	fileInfo, err := os.Stat(l.filePath)
+	fileInfo, err := os.Stat(l.FilePath)
 	if err != nil {
 		return false
 	}
