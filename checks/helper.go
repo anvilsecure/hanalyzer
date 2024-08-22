@@ -240,45 +240,45 @@ func GenericSliceToInterfaceSlice[T any](original []T) (interfaceSlice []interfa
 	return interfaceSlice
 }
 
-// Equal compares the Check instance pointed to by c1 with the Check instance
+// Equal compares the Check instance pointed to by c1 with the CheckOutput instance
 // pointed to by c2 to determine if they are equal based on their Name field.
 //
 // Parameters:
 //
-//	c2 - A pointer to another Check instance to compare with the instance
+//	c2 - A pointer to another CheckOutput instance to compare with the Check instance
 //	     pointed to by c1.
 //
 // Returns:
 //
-//	bool - A boolean value indicating whether the Name fields of both Check
+//	bool - A boolean value indicating whether the Name fields of both Check and CheckOutput
 //	       instances are equal (true) or not (false).
 //
 // Note:
 //
-//	This method only compares the Name fields of the Check instances. If
+//	This method only compares the Name fields of the Check and CheckOutput instances. If
 //	you need to compare other fields, you will need to extend this method
 //	accordingly.
-func (c1 *Check) Equal(c2 *Check) (equal bool) {
+func (c1 *Check) Equal(c2 *CheckOutput) (equal bool) {
 	equal = false
-	if c1.Name == c2.Name {
+	if c1.Name == c2.CheckName {
 		equal = true
 	}
 	return
 }
 
-// In checks if the Check instance pointed to by c1 is present in the provided
-// slice of Check instances. The comparison is done using the Equal method,
-// which compares Check instances based on their Name field.
+// In function controls if the Check instance pointed to by c1 is present in the provided
+// slice of CheckOutput instances. The comparison is done using the Equal method,
+// which compares Check and CheckOutput instances based on their Name field.
 //
 // Parameters:
 //
-//	checks - A slice of Check instances to search within.
+//	checks - A slice of CheckOutput instances to search within.
 //
 // Returns:
 //
 //	bool - A boolean value indicating whether the Check instance pointed to
-//	       by c1 is found in the provided slice (true) or not (false).
-func (c1 *Check) In(checks []Check) bool {
+//	       by c1 is found in the provided CheckOutput slice (true) or not (false).
+func (c1 *Check) In(checks []CheckOutput) bool {
 	for _, check := range checks {
 		if c1.Equal(&check) {
 			return true
