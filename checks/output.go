@@ -142,30 +142,32 @@ func CollectOutput(outputFile string) {
 			logger.Log.Errorf("error during JSON unmarshalling of the previous results: %s\n", err.Error())
 		}
 		for _, check := range CheckList {
-			if check.Error != nil {
-				PreviousOut.SkippedChecks = append(PreviousOut.SkippedChecks, check.Name)
-				PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
-					CheckName: check.Name,
-					CheckType: string(check.Type),
-					Errors:    true,
-					ErrorList: []string{check.Error.Error()},
-					Issues:    false,
-					Result:    Result{},
-				})
-			} else {
-				PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
-					CheckName: check.Name,
-					CheckType: string(check.Type),
-					Errors:    false,
-					ErrorList: []string{},
-					Issues:    check.IssuesPresent,
-					Result: Result{
-						Message:   check.Out,
-						Resources: check.AffectedResources,
-						Info:      check.Info,
-						Caveat:    check.Caveat,
-					},
-				})
+			if !check.In(PreviousOut.Checks) {
+				if check.Error != nil {
+					PreviousOut.SkippedChecks = append(PreviousOut.SkippedChecks, check.Name)
+					PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
+						CheckName: check.Name,
+						CheckType: string(check.Type),
+						Errors:    true,
+						ErrorList: []string{check.Error.Error()},
+						Issues:    false,
+						Result:    Result{},
+					})
+				} else {
+					PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
+						CheckName: check.Name,
+						CheckType: string(check.Type),
+						Errors:    false,
+						ErrorList: []string{},
+						Issues:    check.IssuesPresent,
+						Result: Result{
+							Message:   check.Out,
+							Resources: check.AffectedResources,
+							Info:      check.Info,
+							Caveat:    check.Caveat,
+						},
+					})
+				}
 			}
 		}
 		jsonData, err = json.MarshalIndent(PreviousOut, "", "  ")
