@@ -7,3 +7,4 @@ ssh.conf.yaml
 build/**
 saphanalyzer_warnings_*
 out.json
+*/output.html
