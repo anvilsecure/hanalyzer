@@ -24,24 +24,31 @@ import (
         "check_name_#3",
         "check_name_#4"
     ],
-    "results":
+    "checks":
     [
         {
             "check_name": "<check_name_#1>",
-            "errors": false,
-			"error_list":[],
-            "issues": true,
-            "result": "<base64 encoded string>"
-        },
-        {
-            "check_name": "<check_name_#2>",
+			"check_type": "[ssh|query]"
             "errors": true,
 			"error_list":[
 				"check_error_#1",
 				"check_error_#2"
 			],
             "issues": false,
-            "result": ""
+            "result": {
+				"message": "<result message string>",
+				"info": "<info message string>",
+				"caveat": "<caveat message string>",
+				"resources": [
+					{
+						"key1": "value1",
+						"key2": "value2",
+						....
+						"keyN": "valueN"
+					},
+					....
+				]
+			}
         }
     ]
 }
