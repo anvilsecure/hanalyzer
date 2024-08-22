@@ -29,94 +29,55 @@
             </li>
         </ul>
         <div class="tab-content" id="myTabContent">
-
+            <!-- Query Checks -->
             <div class="tab-pane fade" id="query" role="tabpanel" aria-labelledby="query-tab">
                 <!-- Filter for Query Checks -->
-                <h2 class="mt-4">Filters</h2>
-                <div class="form-group">
-                    <label for="queryIssueFilter">Filter by Issues:</label>
-                    <select id="queryIssueFilter" class="form-control">
-                        <option value="all">All</option>
-                        <option value="true">Has Issues</option>
-                        <option value="false">No Issues</option>
-                    </select>
+                <h2 class="mt-4">Filter by</h2>
+                <div class="form-group d-flex">
+                    <div class="mr-3">
+                        <label for="queryIssueFilter">Issues:</label>
+                        <select id="queryIssueFilter" class="form-control">
+                            <option value="all">All</option>
+                            <option value="true">Has Issues</option>
+                            <option value="false">No Issues</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="queryCategoryFilter">Category:</label>
+                        <select id="queryCategoryFilter" class="form-control">
+                            <option value="all">All Categories</option>
+                            {{range .Categories}}
+                            <option value="{{.}}">{{.}}</option>
+                            {{end}}
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Query Checks List -->
-                <h2 class="mt-4">Query Checks</h2>
-                {{range $category, $checks := groupByCategory .Checks "query"}}
-                    <h3 class="mt-4">{{ $category }}</h3>
-                    {{range $index, $check := $checks}}
+                <div id="queryChecks">
+                    {{range $category, $checks := groupByCategory .Checks "query"}}
+                    <div class="category-group" data-category="{{ $category }}">
+                        <h3 class="mt-4 category-title">{{ $category }}</h3>
+                        {{range $index, $check := $checks}}
                         {{if and (eq $check.CheckType "query") (not (hasPrefix $check.CheckName "_pre"))}}
-                            <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}">
-                                <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
-                                    <h3 class="card-title">
-                                        <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapseQuery{{$index}}" aria-expanded="false" aria-controls="collapseQuery{{$index}}">
-                                            {{ $check.CheckName }}
-                                        </button>
-                                    </h3>
-                                </div>
-                                <div id="collapseQuery{{$index}}" class="collapse">
-                                    <div class="card-body">
-                                        <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
-                                        {{ if $check.Errors }}
-                                            <p><strong>Error List:</strong></p>
-                                            <ul class="list-group mb-3">
-                                                {{range $check.ErrorList}}
-                                                <li class="list-group-item">{{.}}</li>
-                                                {{end}}
-                                            </ul>
-                                        {{end}}
-                                        <h4 class="mt-4">Result</h4>
-                                        <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
-                                        <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
-                                        <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
-                                        <h5 class="mt-4">Resources</h5>
-                                        {{.Result.Resources}}
-                                    </div>
-                                </div>
-                            </div>
-                        {{end}}
-                    {{end}}
-                {{end}}
-            </div>
-
-            <div class="tab-pane fade show active" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
-                <!-- Filter for SSH Checks -->
-                <h2 class="mt-4">Filters</h2>
-                <div class="form-group">
-                    <label for="sshIssueFilter">Filter by Issues:</label>
-                    <select id="sshIssueFilter" class="form-control">
-                        <option value="all">All</option>
-                        <option value="true">Has Issues</option>
-                        <option value="false">No Issues</option>
-                    </select>
-                </div>
-
-            <!-- SSH Checks List -->
-            <h2 class="mt-4">SSH Checks</h2>
-            {{range $category, $checks := groupByCategory .Checks "ssh"}}
-                <h3 class="mt-4">{{ $category }}</h3>
-                {{range $index, $check := $checks}}
-                    {{if and (eq $check.CheckType "ssh") (not (hasPrefix $check.CheckName "_pre"))}}
-                        <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}">
+                        <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}" data-category="{{ $check.CheckCategory }}">
                             <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
                                 <h3 class="card-title">
-                                    <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapseSSH{{$index}}" aria-expanded="false" aria-controls="collapseSSH{{$index}}">
+                                    <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapseQuery{{$index}}" aria-expanded="false" aria-controls="collapseQuery{{$index}}">
                                         {{ $check.CheckName }}
                                     </button>
                                 </h3>
                             </div>
-                            <div id="collapseSSH{{$index}}" class="collapse">
+                            <div id="collapseQuery{{$index}}" class="collapse">
                                 <div class="card-body">
                                     <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
                                     {{ if $check.Errors }}
-                                        <p><strong>Error List:</strong></p>
-                                        <ul class="list-group mb-3">
-                                            {{range $check.ErrorList}}
-                                            <li class="list-group-item">{{.}}</li>
-                                            {{end}}
-                                        </ul>
+                                    <p><strong>Error List:</strong></p>
+                                    <ul class="list-group mb-3">
+                                        {{range $check.ErrorList}}
+                                        <li class="list-group-item">{{.}}</li>
+                                        {{end}}
+                                    </ul>
                                     {{end}}
                                     <h4 class="mt-4">Result</h4>
                                     <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
@@ -127,10 +88,78 @@
                                 </div>
                             </div>
                         </div>
+                        {{end}}
+                        {{end}}
+                    </div>
                     {{end}}
-                {{end}}
-            {{end}}
-        </div>
+                </div>
+            </div>
+
+            <!-- SSH Checks -->
+            <div class="tab-pane fade show active" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
+                <!-- Filter for SSH Checks -->
+                <h2 class="mt-4">Filter by</h2>
+                <div class="form-group d-flex">
+                    <div class="mr-3">
+                        <label for="sshIssueFilter">Issues:</label>
+                        <select id="sshIssueFilter" class="form-control">
+                            <option value="all">All</option>
+                            <option value="true">Has Issues</option>
+                            <option value="false">No Issues</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sshCategoryFilter">Category:</label>
+                        <select id="sshCategoryFilter" class="form-control">
+                            <option value="all">All Categories</option>
+                            {{range .Categories}}
+                            <option value="{{.}}">{{.}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SSH Checks List -->
+                <div id="sshChecks">
+                    {{range $category, $checks := groupByCategory .Checks "ssh"}}
+                    <div class="category-group" data-category="{{ $category }}">
+                        <h3 class="mt-4 category-title">{{ $category }}</h3>
+                        {{range $index, $check := $checks}}
+                        {{if not (hasPrefix $check.CheckName "_pre")}}
+                        <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}" data-category="{{ $check.CheckCategory }}">
+                            <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
+                                <h3 class="card-title">
+                                    <button class="btn btn-link text-white" type="button" data-toggle="collapse" data-target="#collapse{{$index}}" aria-expanded="false" aria-controls="collapse{{$index}}">
+                                        {{ $check.CheckName }}
+                                    </button>
+                                </h3>
+                            </div>
+                            <div id="collapse{{$index}}" class="collapse">
+                                <div class="card-body">
+                                    <p><strong>Errors:</strong>{{ if not $check.Errors }} no errors found.{{end}}</p>
+                                    {{ if $check.Errors }}
+                                    <p><strong>Error List:</strong></p>
+                                    <ul class="list-group mb-3">
+                                        {{range $check.ErrorList}}
+                                        <li class="list-group-item">{{.}}</li>
+                                        {{end}}
+                                    </ul>
+                                    {{end}}
+                                    <h4 class="mt-4">Result</h4>
+                                    <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
+                                    <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
+                                    <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
+                                    <h5 class="mt-4">Resources</h5>
+                                    {{.Result.Resources}}
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                        {{end}}
+                    </div>
+                    {{end}}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -141,37 +170,78 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Filtering functionality for SSH checks
             var sshFilter = document.getElementById('sshIssueFilter');
-            sshFilter.addEventListener('change', function() {
-                var value = this.value;
-                var cards = document.querySelectorAll('#ssh .filterable');
+            var sshCategoryFilter = document.getElementById('sshCategoryFilter');
 
-                cards.forEach(function(card) {
-                    var issues = card.getAttribute('data-issues');
-                    if (value === 'all' || value === issues) {
-                        card.style.display = 'block';
+            function filterSSHChecks() {
+                var issueValue = sshFilter.value;
+                var categoryValue = sshCategoryFilter.value;
+                var categories = document.querySelectorAll('#sshChecks .category-group');
+
+                categories.forEach(function(categoryGroup) {
+                    var cards = categoryGroup.querySelectorAll('.filterable');
+                    var visibleCardCount = 0;
+
+                    cards.forEach(function(card) {
+                        var issues = card.getAttribute('data-issues');
+                        var category = card.getAttribute('data-category');
+
+                        if ((issueValue === 'all' || issueValue === issues) && (categoryValue === 'all' || categoryValue === category)) {
+                            card.style.display = 'block';
+                            visibleCardCount++;
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    // Show or hide the category title based on visible cards
+                    if (visibleCardCount > 0) {
+                        categoryGroup.querySelector('.category-title').style.display = 'block';
                     } else {
-                        card.style.display = 'none';
+                        categoryGroup.querySelector('.category-title').style.display = 'none';
                     }
                 });
-            });
+            }
+
+            sshFilter.addEventListener('change', filterSSHChecks);
+            sshCategoryFilter.addEventListener('change', filterSSHChecks);
 
             // Filtering functionality for Query checks
             var queryFilter = document.getElementById('queryIssueFilter');
-            queryFilter.addEventListener('change', function() {
-                var value = this.value;
-                var cards = document.querySelectorAll('#query .filterable');
+            var queryCategoryFilter = document.getElementById('queryCategoryFilter');
 
-                cards.forEach(function(card) {
-                    var issues = card.getAttribute('data-issues');
-                    if (value === 'all' || value === issues) {
-                        card.style.display = 'block';
+            function filterQueryChecks() {
+                var issueValue = queryFilter.value;
+                var categoryValue = queryCategoryFilter.value;
+                var categories = document.querySelectorAll('#queryChecks .category-group');
+
+                categories.forEach(function(categoryGroup) {
+                    var cards = categoryGroup.querySelectorAll('.filterable');
+                    var visibleCardCount = 0;
+
+                    cards.forEach(function(card) {
+                        var issues = card.getAttribute('data-issues');
+                        var category = card.getAttribute('data-category');
+
+                        if ((issueValue === 'all' || issueValue === issues) && (categoryValue === 'all' || categoryValue === category)) {
+                            card.style.display = 'block';
+                            visibleCardCount++;
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    // Show or hide the category title based on visible cards
+                    if (visibleCardCount > 0) {
+                        categoryGroup.querySelector('.category-title').style.display = 'block';
                     } else {
-                        card.style.display = 'none';
+                        categoryGroup.querySelector('.category-title').style.display = 'none';
                     }
                 });
-            });
+            }
+
+            queryFilter.addEventListener('change', filterQueryChecks);
+            queryCategoryFilter.addEventListener('change', filterQueryChecks);
 
             // Trigger the change event to apply the default filter
             sshFilter.dispatchEvent(new Event('change'));
