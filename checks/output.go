@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"hana/config"
 	"hana/logger"
+	"hana/utils"
+	"io"
 	"os"
 )
 
@@ -56,6 +58,7 @@ type Result struct {
 
 type CheckOutput struct {
 	CheckName string   `json:"check_name"`
+	CheckType string   `json:"check_type"`
 	Errors    bool     `json:"errors"`
 	ErrorList []string `json:"error_list"`
 	Issues    bool     `json:"issues"`
@@ -84,38 +87,97 @@ func (check *Check) addCheckResultToOutput(
 }
 
 func CollectOutput(outputFile string) {
-	Out.ServerIP = config.Conf.Host
-	Out.ServerPort = config.Conf.Database.Port
-	Out.Sid = config.Conf.SID
-	for _, check := range CheckList {
-		if check.Error != nil {
-			Out.SkippedChecks = append(Out.SkippedChecks, check.Name)
-			Out.Checks = append(Out.Checks, CheckOutput{
-				CheckName: check.Name,
-				Errors:    true,
-				ErrorList: []string{check.Error.Error()},
-				Issues:    false,
-				Result:    Result{},
-			})
-		} else {
-			Out.Checks = append(Out.Checks, CheckOutput{
-				CheckName: check.Name,
-				Errors:    false,
-				ErrorList: []string{},
-				Issues:    check.IssuesPresent,
-				Result: Result{
-					Message:   check.Out,
-					Resources: check.AffectedResources,
-					Info:      check.Info,
-					Caveat:    check.Caveat,
-				},
-			})
-		}
-	}
-	jsonData, err := json.MarshalIndent(Out, "", "  ")
+	var jsonData []byte
+	exists, empty, err := utils.FileExistsAndNotEmpty(outputFile)
 	if err != nil {
-		logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
-		return
+		logger.Log.Errorf("Error while checking file '%s' existence: %s\n", outputFile, err.Error())
+	}
+	if exists && empty || !exists {
+		if exists && empty {
+			logger.Log.Debugf("File '%s' is empty I will replace it.\n", outputFile)
+		}
+		Out.ServerIP = config.Conf.Host
+		Out.ServerPort = config.Conf.Database.Port
+		Out.Sid = config.Conf.SID
+		for _, check := range CheckList {
+			if check.Error != nil {
+				Out.SkippedChecks = append(Out.SkippedChecks, check.Name)
+				Out.Checks = append(Out.Checks, CheckOutput{
+					CheckName: check.Name,
+					CheckType: string(check.Type),
+					Errors:    true,
+					ErrorList: []string{check.Error.Error()},
+					Issues:    false,
+					Result:    Result{},
+				})
+			} else {
+				Out.Checks = append(Out.Checks, CheckOutput{
+					CheckName: check.Name,
+					CheckType: string(check.Type),
+					Errors:    false,
+					ErrorList: []string{},
+					Issues:    check.IssuesPresent,
+					Result: Result{
+						Message:   check.Out,
+						Resources: check.AffectedResources,
+						Info:      check.Info,
+						Caveat:    check.Caveat,
+					},
+				})
+			}
+		}
+		jsonData, err = json.MarshalIndent(Out, "", "  ")
+		if err != nil {
+			logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
+			return
+		}
+	} else if exists && !empty {
+		logger.Log.Debugf("File '%s' is not empty I will add results to it.\n", outputFile)
+		var PreviousOut *Output
+		file, err := os.Open(outputFile)
+		if err != nil {
+			logger.Log.Errorf("Error opening existing JSON output file '%s': %s", outputFile, err.Error())
+			return
+		}
+		defer file.Close()
+
+		byteValue, _ := io.ReadAll(file)
+		err = json.Unmarshal(byteValue, &PreviousOut)
+		if err != nil {
+			logger.Log.Errorf("error during JSON unmarshalling of the previous results: %s\n", err.Error())
+		}
+		for _, check := range CheckList {
+			if check.Error != nil {
+				PreviousOut.SkippedChecks = append(PreviousOut.SkippedChecks, check.Name)
+				PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
+					CheckName: check.Name,
+					CheckType: string(check.Type),
+					Errors:    true,
+					ErrorList: []string{check.Error.Error()},
+					Issues:    false,
+					Result:    Result{},
+				})
+			} else {
+				PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
+					CheckName: check.Name,
+					CheckType: string(check.Type),
+					Errors:    false,
+					ErrorList: []string{},
+					Issues:    check.IssuesPresent,
+					Result: Result{
+						Message:   check.Out,
+						Resources: check.AffectedResources,
+						Info:      check.Info,
+						Caveat:    check.Caveat,
+					},
+				})
+			}
+		}
+		jsonData, err = json.MarshalIndent(PreviousOut, "", "  ")
+		if err != nil {
+			logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
+			return
+		}
 	}
 	logger.Log.Infof("Writing output data to file: %s\n", outputFile)
 	if err := os.WriteFile(outputFile, jsonData, 0666); err != nil {
