@@ -64,12 +64,13 @@ type Result struct {
 }
 
 type CheckOutput struct {
-	CheckName string   `json:"check_name"`
-	CheckType string   `json:"check_type"`
-	Errors    bool     `json:"errors"`
-	ErrorList []string `json:"error_list"`
-	Issues    bool     `json:"issues"`
-	Result    Result   `json:"result"`
+	CheckName     string   `json:"check_name"`
+	CheckType     string   `json:"check_type"`
+	CheckCategory string   `json:"check_category"`
+	Errors        bool     `json:"errors"`
+	ErrorList     []string `json:"error_list"`
+	Issues        bool     `json:"issues"`
+	Result        Result   `json:"result"`
 }
 
 type Output struct {
@@ -98,20 +99,22 @@ func CollectOutput(outputFile string) {
 			if check.Error != nil {
 				Out.SkippedChecks = append(Out.SkippedChecks, check.Name)
 				Out.Checks = append(Out.Checks, CheckOutput{
-					CheckName: check.Name,
-					CheckType: string(check.Type),
-					Errors:    true,
-					ErrorList: []string{check.Error.Error()},
-					Issues:    false,
-					Result:    Result{},
+					CheckName:     check.Name,
+					CheckType:     string(check.Type),
+					CheckCategory: check.Category,
+					Errors:        true,
+					ErrorList:     []string{check.Error.Error()},
+					Issues:        false,
+					Result:        Result{},
 				})
 			} else {
 				Out.Checks = append(Out.Checks, CheckOutput{
-					CheckName: check.Name,
-					CheckType: string(check.Type),
-					Errors:    false,
-					ErrorList: []string{},
-					Issues:    check.IssuesPresent,
+					CheckName:     check.Name,
+					CheckType:     string(check.Type),
+					CheckCategory: check.Category,
+					Errors:        false,
+					ErrorList:     []string{},
+					Issues:        check.IssuesPresent,
 					Result: Result{
 						Message:   check.Out,
 						Resources: check.AffectedResources,
@@ -146,20 +149,22 @@ func CollectOutput(outputFile string) {
 				if check.Error != nil {
 					PreviousOut.SkippedChecks = append(PreviousOut.SkippedChecks, check.Name)
 					PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
-						CheckName: check.Name,
-						CheckType: string(check.Type),
-						Errors:    true,
-						ErrorList: []string{check.Error.Error()},
-						Issues:    false,
-						Result:    Result{},
+						CheckName:     check.Name,
+						CheckType:     string(check.Type),
+						CheckCategory: check.Category,
+						Errors:        true,
+						ErrorList:     []string{check.Error.Error()},
+						Issues:        false,
+						Result:        Result{},
 					})
 				} else {
 					PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
-						CheckName: check.Name,
-						CheckType: string(check.Type),
-						Errors:    false,
-						ErrorList: []string{},
-						Issues:    check.IssuesPresent,
+						CheckName:     check.Name,
+						CheckType:     string(check.Type),
+						CheckCategory: check.Category,
+						Errors:        false,
+						ErrorList:     []string{},
+						Issues:        check.IssuesPresent,
 						Result: Result{
 							Message:   check.Out,
 							Resources: check.AffectedResources,
