@@ -81,18 +81,6 @@ type Output struct {
 	Checks         []CheckOutput `json:"checks"`
 }
 
-func (check *Check) addCheckResultToOutput(
-	message string,
-	info string,
-	issuesPresent bool,
-	affectedReources []interface{},
-) {
-	check.Out = message
-	check.Info = info
-	check.IssuesPresent = issuesPresent
-	check.AffectedResources = affectedReources
-}
-
 func CollectOutput(outputFile string) {
 	var jsonData []byte
 	exists, empty, err := utils.FileExistsAndNotEmpty(outputFile)

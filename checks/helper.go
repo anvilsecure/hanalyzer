@@ -163,10 +163,6 @@ func subslice(s1 []string, s2 []string) bool {
 	return true
 }
 
-func remove(slice []string, s int) []string {
-	return append(slice[:s], slice[s+1:]...)
-}
-
 // difference returns the elements in `a` that aren't in `b`.
 func difference(a, b []string) []string {
 	mb := make(map[string]struct{}, len(b))

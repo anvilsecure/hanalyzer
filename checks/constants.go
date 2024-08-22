@@ -99,12 +99,4 @@ var (
 		Literal: "one month",
 		Value:   1 * MONTH,
 	}
-	threeMonths Duration = Duration{
-		Literal: "three months",
-		Value:   3 * MONTH,
-	}
-	sixMonths Duration = Duration{
-		Literal: "six months",
-		Value:   6 * MONTH,
-	}
 )
