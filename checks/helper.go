@@ -214,7 +214,6 @@ func getCheckByName(name string) (*Check, error) {
 }
 
 // checkEmptyResult function checks if the result set of the executed Check is empty or not
-
 func (check *Check) checkEmptyResult() bool {
 	if len(check.Results) == 0 {
 		logger.Log.Warnf("%s check returned empty result set\n", check.Name)
@@ -224,6 +223,13 @@ func (check *Check) checkEmptyResult() bool {
 }
 
 // GenericSliceToInterfaceSlice converts a slice of any type to a slice of interface{}
+// Parameters:
+//
+//	original - the original slice (of any given type)
+//
+// Returns:
+//
+//	[]interface{} - a generic slice of interface objects
 func GenericSliceToInterfaceSlice[T any](original []T) (interfaceSlice []interface{}) {
 	if original == nil {
 		return nil
@@ -258,4 +264,25 @@ func (c1 *Check) Equal(c2 *Check) (equal bool) {
 		equal = true
 	}
 	return
+}
+
+// In checks if the Check instance pointed to by c1 is present in the provided
+// slice of Check instances. The comparison is done using the Equal method,
+// which compares Check instances based on their Name field.
+//
+// Parameters:
+//
+//	checks - A slice of Check instances to search within.
+//
+// Returns:
+//
+//	bool - A boolean value indicating whether the Check instance pointed to
+//	       by c1 is found in the provided slice (true) or not (false).
+func (c1 *Check) In(checks []Check) bool {
+	for _, check := range checks {
+		if c1.Equal(&check) {
+			return true
+		}
+	}
+	return false
 }
