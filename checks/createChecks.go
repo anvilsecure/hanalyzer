@@ -12,9 +12,11 @@ func CreateChecks(checkType CheckType) {
 		description := "The database user SYSTEM is the most powerful database user with irrevocable system privileges. The SYSTEM user is active after database creation."
 		link := "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#system-user"
 		recommendation := "Use SYSTEM to create database users with the minimum privilege set required for their duties (for example, user administration, system administration). Then deactivate SYSTEM."
+		category := "Recommendations for Database Users, Roles, and Privileges"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -29,6 +31,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -45,6 +48,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -59,6 +63,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -73,6 +78,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -87,6 +93,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -101,6 +108,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -115,6 +123,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -129,6 +138,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -143,6 +153,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -157,6 +168,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -171,6 +183,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -185,6 +198,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -199,6 +213,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -210,9 +225,11 @@ func CreateChecks(checkType CheckType) {
 		description = "The access permission of files exported to the SAP HANA server can be configured using the [import_export] file_security parameter in the indexserver.ini configuration file. The default permission set is 640 ([import_export] file_security=medium)."
 		link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/1bea52d12332472cb4a7658300241ce8.html#os-file-system-permissions"
 		recommendation = "Do not change default access permission of exported files. In addition, ensure that only a limited number of database users have the system privilege IMPORT and EXPORT."
+		category = "Recommendations for File System and Operating System"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -227,6 +244,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -238,9 +256,11 @@ func CreateChecks(checkType CheckType) {
 		description = "Auditing is disabled by default."
 		link = "https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/5c34ecd355e44aa9af3b3e6de4bbf5c1.html#auditing"
 		recommendation = "Verify whether auditing is required by your security concept, for example to fulfill specific compliance and regulatory requirements."
+		category = "Recommendations for Auditing Configuration"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -255,6 +275,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -269,6 +290,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -283,6 +305,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -294,9 +317,11 @@ func CreateChecks(checkType CheckType) {
 		description = "SAP HANA services use IP addresses to communicate with each other. Host names are mapped to these IP addresses through internal host name resolution, a technique by which the use of specific and/or fast networks can be enforced and communication restricted to a specific network. In single-host systems, SAP HANA services listen on the loopback interface only (IP address 127.0.0.1). In global.ini files, the [communication] listeninterface is set to .local."
 		link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/eccef06eabe545e68d5019bcb6d8e342.html?locale=en-US&version=2.12.0.0#internal-host-name-resolution-in-single-host-system"
 		recommendation = "Do not change the default setting."
+		category = "Recommendations for Network Configuration"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -311,6 +336,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -325,6 +351,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -339,6 +366,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -353,6 +381,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -364,9 +393,11 @@ func CreateChecks(checkType CheckType) {
 		description = "The instance secure store in the file system (SSFS) protects internal root keys in the file system. A unique master key is generated for the instance SSFS in every installation."
 		link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#instance-ssfs-master-key"
 		recommendation = "If you received your system pre-installed from a hardware or hosting partner, we recommend that you change the master key of the instance SSFS immediately after handover to ensure that it is not known outside of your organization."
+		category = "Recommendations for Data Encryption"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -381,6 +412,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -395,6 +427,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -409,6 +442,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -423,6 +457,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -434,9 +469,11 @@ func CreateChecks(checkType CheckType) {
 		description = "preliminary query #1 for trace files check"
 		link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/9630172f36564ee5ba26c13c054a35e1.html?locale=en-US&version=2.12.0.0#trace-files"
 		recommendation = "- Enable tracing to troubleshoot specific problems only and then disable.\n- Exercise caution when setting or changing the trace level. A high trace level may expose certain security-relevant data (for example, database trace level DEBUG or SQL trace level ALL_WITH_RESULTS).\n- Delete trace files that are no longer needed."
+		category = "Recommendations for Trace and Dump Files"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -451,6 +488,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -465,6 +503,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -476,9 +515,11 @@ func CreateChecks(checkType CheckType) {
 		description = "All tenant databases use the same trust store as the system database for SAML-based user authentication"
 		link = "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/a6e033bd909948d5b12caeb2ceba20d4.html?version=2.12.0.0#saml-based-user-authentication"
 		recommendation = "To prevent users of one tenant database being able to log on to other databases in the system (including the system database) using SAML, create individual certificate collections with the purpose SAML and SSL in every tenant database. In addition, specify a non-existent trust store for every tenant database using the [communication] sslTrustStore property in the global.ini file."
+		category = "Recommendations for Tenant Database Management"
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -493,6 +534,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -507,6 +549,7 @@ func CreateChecks(checkType CheckType) {
 		CheckList = append(CheckList, newCheck(
 			QueryType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,
@@ -518,9 +561,11 @@ func CreateChecks(checkType CheckType) {
 		description := "The secure user store (hdbuserstore) is a tool installed with the SAP HANA client. It is used to store SAP HANA connection information, including user passwords, securely on clients. Information contained in the SAP HANA secure user store is encrypted using a unique encryption key."
 		link := "https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?locale=en-US&version=2.12.0.0#encryption-key-of-the-sap-hana-secure-user-store-(hdbuserstore)"
 		recommendation := "If you are using the current version of the SAP HANA client, there is no need to change the encryption key of the secure user store. However, if you are using an older version of the SAP HANA client, we recommend changing the encryption key after installation of the SAP HANA client."
+		category := "Recommendations for Data Encryption"
 		CheckList = append(CheckList, newCheck(
 			SSHType,
 			name,
+			category,
 			description,
 			link,
 			recommendation,

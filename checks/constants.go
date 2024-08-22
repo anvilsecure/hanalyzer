@@ -16,6 +16,7 @@ type Results []map[string]interface{}
 type Check struct {
 	Type              CheckType
 	Name              string
+	Category          string
 	Description       string
 	Link              string
 	Recommendation    string
