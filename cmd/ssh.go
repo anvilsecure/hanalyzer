@@ -44,13 +44,11 @@ var sshCmd = &cobra.Command{
 		// ----------------------------------
 		//      prepare output folder
 		// ----------------------------------
-		log.Println("preparing output folder")
 		outputPath, err := utils.PrepareOutputFolder(outputFolder)
 		if err != nil {
 			log.Fatalf("error while preparing output folder: %s\n", err.Error())
 		}
 		logger.Log = logger.NewLogger(outputPath)
-		logger.Log.Debugf("outputPath: %s\n", logger.Log.OutputFolder)
 		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
 		// ----------------------------------
 
