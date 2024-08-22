@@ -214,7 +214,6 @@ func getCheckByName(name string) (*Check, error) {
 }
 
 // checkEmptyResult function checks if the result set of the executed Check is empty or not
-
 func (check *Check) checkEmptyResult() bool {
 	if len(check.Results) == 0 {
 		logger.Log.Warnf("%s check returned empty result set\n", check.Name)
@@ -224,6 +223,13 @@ func (check *Check) checkEmptyResult() bool {
 }
 
 // GenericSliceToInterfaceSlice converts a slice of any type to a slice of interface{}
+// Parameters:
+//
+//	original - the original slice (of any given type)
+//
+// Returns:
+//
+//	[]interface{} - a generic slice of interface objects
 func GenericSliceToInterfaceSlice[T any](original []T) (interfaceSlice []interface{}) {
 	if original == nil {
 		return nil
@@ -232,4 +238,51 @@ func GenericSliceToInterfaceSlice[T any](original []T) (interfaceSlice []interfa
 		interfaceSlice = append(interfaceSlice, element)
 	}
 	return interfaceSlice
+}
+
+// Equal compares the Check instance pointed to by c1 with the CheckOutput instance
+// pointed to by c2 to determine if they are equal based on their Name field.
+//
+// Parameters:
+//
+//	c2 - A pointer to another CheckOutput instance to compare with the Check instance
+//	     pointed to by c1.
+//
+// Returns:
+//
+//	bool - A boolean value indicating whether the Name fields of both Check and CheckOutput
+//	       instances are equal (true) or not (false).
+//
+// Note:
+//
+//	This method only compares the Name fields of the Check and CheckOutput instances. If
+//	you need to compare other fields, you will need to extend this method
+//	accordingly.
+func (c1 *Check) Equal(c2 *CheckOutput) (equal bool) {
+	equal = false
+	if c1.Name == c2.CheckName {
+		equal = true
+	}
+	return
+}
+
+// In function controls if the Check instance pointed to by c1 is present in the provided
+// slice of CheckOutput instances. The comparison is done using the Equal method,
+// which compares Check and CheckOutput instances based on their Name field.
+//
+// Parameters:
+//
+//	checks - A slice of CheckOutput instances to search within.
+//
+// Returns:
+//
+//	bool - A boolean value indicating whether the Check instance pointed to
+//	       by c1 is found in the provided CheckOutput slice (true) or not (false).
+func (c1 *Check) In(checks []CheckOutput) bool {
+	for _, check := range checks {
+		if c1.Equal(&check) {
+			return true
+		}
+	}
+	return false
 }
