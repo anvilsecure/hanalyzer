@@ -6,6 +6,8 @@ import (
 	"hana/config"
 	"hana/db"
 	"hana/logger"
+	"hana/utils"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -41,6 +43,19 @@ var queryCmd = &cobra.Command{
 			config.Conf.Database.Username = dbUsername
 			config.Conf.Database.Password = dbPassword
 		}
+		// ----------------------------------
+		//      prepare output folder
+		// ----------------------------------
+		log.Println("preparing output folder")
+		outputPath, err := utils.PrepareOutputFolder(outputFolder)
+		if err != nil {
+			log.Fatalf("error while preparing output folder: %s\n", err.Error())
+		}
+		logger.Log = logger.NewLogger(outputPath)
+		logger.Log.Debugf("outputPath: %s\n", logger.Log.OutputFolder)
+		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
+		// ----------------------------------
+
 		db.Config()
 		checks.CreateChecks(checkType)
 		checks.ExecuteChecks(checkType)
@@ -71,20 +86,16 @@ func validateDBFlags() error {
 		if dbUsername == "" {
 			return fmt.Errorf("error: username required when not using -conf")
 		}
-		if jsonOutput == "" {
-			jsonOutput = defaultJSONOutput
-		}
 	}
 	return nil
 }
 
 func init() {
-	defaultJSONOutput = filepath.Join(logger.Log.OutputPath, "out.json")
 	queryCmd.Flags().StringVar(&configFile, "conf", "", "Provide configuration file (required if --host, --db-port, --db-username, --db-password, and --sid are not provided by CLI)")
 	queryCmd.Flags().StringVar(&host, "host", "", "Database host")
 	queryCmd.Flags().IntVar(&dbPort, "db-port", 39015, "Database port")
 	queryCmd.Flags().StringVar(&dbUsername, "db-username", "", "Database username")
 	queryCmd.Flags().StringVar(&SID, "sid", "", "Instance SID")
-	queryCmd.Flags().StringVar(&jsonOutput, "json-output", "", "JSON output file")
+	queryCmd.Flags().StringVar(&outputFolder, "output-folder", "", "Output folder")
 	rootCmd.AddCommand(queryCmd)
 }

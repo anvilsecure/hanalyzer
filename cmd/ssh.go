@@ -6,6 +6,7 @@ import (
 	"hana/config"
 	"hana/logger"
 	"hana/ssh"
+	"hana/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -40,6 +41,19 @@ var sshCmd = &cobra.Command{
 			config.Conf.SSH.Username = sshUsername
 			config.Conf.SSH.Password = sshPassword
 		}
+		// ----------------------------------
+		//      prepare output folder
+		// ----------------------------------
+		log.Println("preparing output folder")
+		outputPath, err := utils.PrepareOutputFolder(outputFolder)
+		if err != nil {
+			log.Fatalf("error while preparing output folder: %s\n", err.Error())
+		}
+		logger.Log = logger.NewLogger(outputPath)
+		logger.Log.Debugf("outputPath: %s\n", logger.Log.OutputFolder)
+		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
+		// ----------------------------------
+
 		ssh.Config()
 		checks.CreateChecks(checkType)
 		checks.ExecuteChecks(checkType)
@@ -67,19 +81,15 @@ func validateSSHFlags() error {
 		if sshUsername == "" {
 			return fmt.Errorf("error: username required when not using -conf")
 		}
-		if jsonOutput == "" {
-			jsonOutput = defaultJSONOutput
-		}
 	}
 	return nil
 }
 
 func init() {
-	defaultJSONOutput = filepath.Join(logger.Log.OutputPath, "out.json")
 	sshCmd.Flags().StringVar(&configFile, "conf", "", "Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)")
 	sshCmd.Flags().StringVar(&host, "host", "", "Database host")
 	sshCmd.Flags().IntVar(&sshPort, "ssh-port", 22, "SSH username")
 	sshCmd.Flags().StringVar(&sshUsername, "ssh-username", "", "SSH username")
-	sshCmd.Flags().StringVar(&jsonOutput, "json-output", "", "JSON output file")
+	sshCmd.Flags().StringVar(&outputFolder, "output-folder", "", "Output folder")
 	rootCmd.AddCommand(sshCmd)
 }
