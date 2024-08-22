@@ -8,17 +8,17 @@ import (
 )
 
 var (
-	configFile        string
-	host              string
-	SID               string
-	dbPort            int
-	dbUsername        string
-	dbPassword        string
-	sshUsername       string
-	sshPassword       string
-	sshPort           int
-	defaultJSONOutput string
-	jsonOutput        string
+	configFile   string
+	host         string
+	SID          string
+	dbPort       int
+	dbUsername   string
+	dbPassword   string
+	sshUsername  string
+	sshPassword  string
+	sshPort      int
+	jsonOutput   string
+	outputFolder string
 )
 
 var rootCmd = &cobra.Command{
