@@ -35,6 +35,7 @@ func Render(path string) {
 		"groupByCategory":   groupByCategory,
 		"hasPrefix":         hasPrefix,
 		"scanDetailsOfType": scanDetailsOfType,
+		"prettifyJSON":      prettifyJSON,
 	}).ParseFiles(tmpFileName)
 	if err != nil {
 		panic(err)

@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"encoding/json"
 	"fmt"
 	"hana/checks"
 	"sort"
@@ -69,4 +70,12 @@ func scanDetailsOfType(scanDetailsSlice []checks.ScanDetails, checkType string) 
 		}
 	}
 	return checks.ScanDetails{}, fmt.Errorf("scanDetails of type '%s' not found in the provided scanDetails slice: %v", checkType, scanDetailsSlice)
+}
+
+func prettifyJSON(v interface{}) (string, error) {
+	jsonData, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonData), nil
 }
