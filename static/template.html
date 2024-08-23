@@ -15,9 +15,6 @@
 <body>
     <div class="container mt-4">
         <h1>SAPHANAlyzer Results</h1>
-        <p><strong>Server IP:</strong> {{.ServerIP}}</p>
-        <p><strong>Server Port:</strong> {{.ServerPort}}</p>
-        <p><strong>SID:</strong> {{.Sid}}</p>
 
         <!-- Bootstrap Tabs -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -28,9 +25,16 @@
                 <a class="nav-link active" id="ssh-tab" data-toggle="tab" href="#ssh" role="tab" aria-controls="ssh" aria-selected="false">SSH Checks</a>
             </li>
         </ul>
+
+        <!--TABS-->
         <div class="tab-content" id="myTabContent">
-            <!-- Query Checks -->
+            <!-- TAB#1: Query Checks -->
             <div class="tab-pane fade" id="query" role="tabpanel" aria-labelledby="query-tab">
+                <br>
+                <p><strong>Server IP:</strong>{{ .QueryScanDetails.ServerIP }}</p>
+                <p><strong>Server Port:</strong>{{ .QueryScanDetails.ServerPort }}</p>
+                <p><strong>Username:</strong>{{ .QueryScanDetails.UserName }}</p>
+                <p><strong>SID:</strong>{{ .QueryScanDetails.Sid }}</p>
                 <!-- Filter for Query Checks -->
                 <h2 class="mt-4">Filter by</h2>
                 <div class="form-group d-flex">
@@ -46,20 +50,18 @@
                         <label for="queryCategoryFilter">Category:</label>
                         <select id="queryCategoryFilter" class="form-control">
                             <option value="all">All Categories</option>
-                            {{range .Categories}}
+                            {{range .QueryScanDetails.Categories}}
                             <option value="{{.}}">{{.}}</option>
                             {{end}}
                         </select>
                     </div>
                 </div>
-
-                <!-- Query Checks List -->
                 <div id="queryChecks">
                     {{range $category, $checks := groupByCategory .Checks "query"}}
                     <div class="category-group" data-category="{{ $category }}">
                         <h3 class="mt-4 category-title">{{ $category }}</h3>
-                        {{range $index, $check := $checks}}
-                        {{if and (eq $check.CheckType "query") (not (hasPrefix $check.CheckName "_pre"))}}
+                        {{range $index, $check := $checks }}
+                        {{if not (hasPrefix $check.CheckName "_pre")}}
                         <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}" data-category="{{ $check.CheckCategory }}">
                             <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
                                 <h3 class="card-title">
@@ -95,9 +97,13 @@
                 </div>
             </div>
 
-            <!-- SSH Checks -->
+            <!-- TAB#2: SSH Checks -->
             <div class="tab-pane fade show active" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
+                <br>
                 <!-- Filter for SSH Checks -->
+                <p><strong>Server IP:</strong> {{.SSHScanDetails.ServerIP}}</p>
+                <p><strong>Server Port:</strong> {{.SSHScanDetails.ServerPort}}</p>
+                <p><strong>Username:</strong> {{.SSHScanDetails.UserName}}</p>
                 <h2 class="mt-4">Filter by</h2>
                 <div class="form-group d-flex">
                     <div class="mr-3">
@@ -112,19 +118,17 @@
                         <label for="sshCategoryFilter">Category:</label>
                         <select id="sshCategoryFilter" class="form-control">
                             <option value="all">All Categories</option>
-                            {{range .Categories}}
+                            {{range .SSHScanDetails.Categories}}
                             <option value="{{.}}">{{.}}</option>
                             {{end}}
                         </select>
                     </div>
                 </div>
-
-                <!-- SSH Checks List -->
                 <div id="sshChecks">
                     {{range $category, $checks := groupByCategory .Checks "ssh"}}
                     <div class="category-group" data-category="{{ $category }}">
                         <h3 class="mt-4 category-title">{{ $category }}</h3>
-                        {{range $index, $check := $checks}}
+                        {{range $index, $check := $checks }}
                         {{if not (hasPrefix $check.CheckName "_pre")}}
                         <div class="card mb-3 filterable" data-issues="{{ $check.Issues }}" data-category="{{ $check.CheckCategory }}">
                             <div class="card-header {{if $check.Issues}}bg-danger text-white{{else}}bg-success text-white{{end}}">
