@@ -104,13 +104,14 @@ func ExecuteChecks(checkType CheckType) {
 	}
 }
 
-func newCheck(checkType CheckType, name, description, link, recommendation, control string, parameters []string) *Check {
+func newCheck(checkType CheckType, name, category, description, link, recommendation, control string, parameters []string) *Check {
 	if name == "" || control == "" {
 		log.Fatalf("Query creation failed. Name and Control fields required.")
 	}
 	return &Check{
 		Type:           checkType,
 		Name:           name,
+		Category:       category,
 		Description:    description,
 		Link:           link,
 		Recommendation: recommendation,

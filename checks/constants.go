@@ -6,16 +6,30 @@ import (
 
 type CheckType string
 
+var (
+	CURRENT_CHECK_TYPE string
+)
+
 const (
 	QueryType CheckType = "query"
 	SSHType   CheckType = "ssh"
 )
+
+func (c CheckType) String() string {
+	switch c {
+	case QueryType:
+		return "query"
+	default:
+		return "ssh"
+	}
+}
 
 type Results []map[string]interface{}
 
 type Check struct {
 	Type              CheckType
 	Name              string
+	Category          string
 	Description       string
 	Link              string
 	Recommendation    string

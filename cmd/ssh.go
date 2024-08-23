@@ -53,6 +53,7 @@ var sshCmd = &cobra.Command{
 		// ----------------------------------
 
 		ssh.Config()
+		checks.CURRENT_CHECK_TYPE = checkType.String()
 		checks.CreateChecks(checkType)
 		checks.ExecuteChecks(checkType)
 		checks.EvaluateResults(checkType)
@@ -62,7 +63,7 @@ var sshCmd = &cobra.Command{
 				checks.SkippedChecks = append(checks.SkippedChecks, check)
 			}
 		}
-		checks.CollectOutput(jsonOutput)
+		checks.CollectOutput(jsonOutput, checkType.String())
 	},
 }
 
