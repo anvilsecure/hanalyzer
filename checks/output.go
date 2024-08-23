@@ -73,31 +73,62 @@ type CheckOutput struct {
 	Result        Result   `json:"result"`
 }
 
-type Output struct {
-	ServerIP       string        `json:"server_ip"`
-	ServerPort     int           `json:"server_port"`
-	Sid            string        `json:"sid"`
-	ExecutedChecks []string      `json:"executed_checks"`
-	SkippedChecks  []string      `json:"skipped_checks"`
-	Checks         []CheckOutput `json:"checks"`
+type ScanDetails struct {
+	ScanType       string   `json:"scan_type"`
+	ServerIP       string   `json:"server_ip"`
+	ServerPort     int      `json:"server_port"`
+	Sid            string   `json:"sid"`
+	UserName       string   `json:"user_name"`
+	ExecutedChecks []string `json:"executed_checks"`
+	SkippedChecks  []string `json:"skipped_checks"`
+	Categories     []string `json:"categories"`
 }
 
-func CollectOutput(outputFile string) {
+type Output struct {
+	ScansDetails []ScanDetails `json:"scan_details"`
+	Checks       []CheckOutput `json:"checks"`
+}
+
+func CollectOutput(outputFile string, checkType string) {
 	var jsonData []byte
+	var scanDetails ScanDetails
 	exists, empty, err := utils.FileExistsAndNotEmpty(outputFile)
 	if err != nil {
 		logger.Log.Errorf("Error while checking file '%s' existence: %s\n", outputFile, err.Error())
+	}
+	if checkType == "query" {
+		scanDetails = ScanDetails{
+			ScanType:       checkType,
+			ServerIP:       config.Conf.Host,
+			ServerPort:     config.Conf.Database.Port,
+			Sid:            config.Conf.SID,
+			UserName:       config.Conf.Database.Username,
+			ExecutedChecks: []string{},
+			SkippedChecks:  []string{},
+		}
+	} else if checkType == "ssh" {
+		scanDetails = ScanDetails{
+			ScanType:       checkType,
+			ServerIP:       config.Conf.Host,
+			ServerPort:     config.Conf.SSH.Port,
+			Sid:            "",
+			UserName:       config.Conf.SSH.Username,
+			ExecutedChecks: []string{},
+			SkippedChecks:  []string{},
+		}
 	}
 	if exists && empty || !exists {
 		if exists && empty {
 			logger.Log.Debugf("File '%s' is empty I will replace it.\n", outputFile)
 		}
-		Out.ServerIP = config.Conf.Host
-		Out.ServerPort = config.Conf.Database.Port
-		Out.Sid = config.Conf.SID
+		Out.ScansDetails = append(Out.ScansDetails, scanDetails)
 		for _, check := range CheckList {
 			if check.Error != nil {
-				Out.SkippedChecks = append(Out.SkippedChecks, check.Name)
+				for _, scanDetails := range Out.ScansDetails {
+					if scanDetails.ScanType == check.Type.String() {
+						scanDetails.SkippedChecks = append(scanDetails.SkippedChecks, check.Name)
+					}
+				}
 				Out.Checks = append(Out.Checks, CheckOutput{
 					CheckName:     check.Name,
 					CheckType:     string(check.Type),
@@ -108,6 +139,11 @@ func CollectOutput(outputFile string) {
 					Result:        Result{},
 				})
 			} else {
+				for _, scanDetails := range Out.ScansDetails {
+					if scanDetails.ScanType == check.Type.String() {
+						scanDetails.ExecutedChecks = append(scanDetails.ExecutedChecks, check.Name)
+					}
+				}
 				Out.Checks = append(Out.Checks, CheckOutput{
 					CheckName:     check.Name,
 					CheckType:     string(check.Type),
@@ -144,10 +180,15 @@ func CollectOutput(outputFile string) {
 		if err != nil {
 			logger.Log.Errorf("error during JSON unmarshalling of the previous results: %s\n", err.Error())
 		}
+		PreviousOut.ScansDetails = append(PreviousOut.ScansDetails, scanDetails)
 		for _, check := range CheckList {
 			if !check.In(PreviousOut.Checks) {
 				if check.Error != nil {
-					PreviousOut.SkippedChecks = append(PreviousOut.SkippedChecks, check.Name)
+					for _, scanDetails := range PreviousOut.ScansDetails {
+						if scanDetails.ScanType == check.Type.String() {
+							scanDetails.SkippedChecks = append(scanDetails.SkippedChecks, check.Name)
+						}
+					}
 					PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
 						CheckName:     check.Name,
 						CheckType:     string(check.Type),
@@ -158,6 +199,11 @@ func CollectOutput(outputFile string) {
 						Result:        Result{},
 					})
 				} else {
+					for _, scanDetails := range PreviousOut.ScansDetails {
+						if scanDetails.ScanType == check.Type.String() {
+							scanDetails.ExecutedChecks = append(scanDetails.ExecutedChecks, check.Name)
+						}
+					}
 					PreviousOut.Checks = append(PreviousOut.Checks, CheckOutput{
 						CheckName:     check.Name,
 						CheckType:     string(check.Type),
