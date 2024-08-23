@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"encoding/json"
+	"hana/checks"
 	"hana/logger"
 	"html/template"
 	"io"
@@ -18,7 +19,7 @@ func Render(path string) {
 	defer file.Close()
 
 	byteValue, _ := io.ReadAll(file)
-	var out *Output
+	var out *checks.Output
 	err = json.Unmarshal(byteValue, &out)
 	if err != nil {
 		panic(err)
@@ -31,8 +32,9 @@ func Render(path string) {
 	}
 	tmpFileName := filepath.Join(cwd, "static/template.html")
 	tmpl, err := template.New("webpage").Funcs(template.FuncMap{
-		"groupByCategory": groupByCategory,
-		"hasPrefix":       hasPrefix,
+		"groupByCategory":   groupByCategory,
+		"hasPrefix":         hasPrefix,
+		"scanDetailsOfType": scanDetailsOfType,
 	}).ParseFiles(tmpFileName)
 	if err != nil {
 		panic(err)
@@ -45,9 +47,31 @@ func Render(path string) {
 	}
 	defer fileOut.Close()
 
+	var sshScanDetails, queryScanDetails checks.ScanDetails
+	queryScanDetails, err = scanDetailsOfType(out.ScansDetails, checks.QueryType.String())
+	if err == nil {
+		queryScanDetails.Categories = extractCategories(out.Checks, checks.QueryType.String())
+	}
+	sshScanDetails, _ = scanDetailsOfType(out.ScansDetails, checks.SSHType.String())
+	if err == nil {
+		sshScanDetails.Categories = extractCategories(out.Checks, checks.SSHType.String())
+	}
+
+	logger.Log.Debugf("queryScanDetails.Categories = %v\n", queryScanDetails.Categories)
+	logger.Log.Debugf("sshScanDetails.Categories = %v\n", sshScanDetails.Categories)
+
 	// Execute the template and write to the file
-	out.Categories = extractCategories(out.Checks)
-	err = tmpl.ExecuteTemplate(fileOut, "template.html", out)
+	err = tmpl.ExecuteTemplate(fileOut, "template.html", struct {
+		CheckType        string               `json:"CheckType"`
+		Checks           []checks.CheckOutput `json:"Checks"`
+		SSHScanDetails   checks.ScanDetails   `json:"SSHScanDetails"`
+		QueryScanDetails checks.ScanDetails   `json:"QueryScanDetails"`
+	}{
+		CheckType:        checks.CURRENT_CHECK_TYPE,
+		Checks:           out.Checks,
+		SSHScanDetails:   sshScanDetails,
+		QueryScanDetails: queryScanDetails,
+	})
 	if err != nil {
 		panic(err)
 	}
