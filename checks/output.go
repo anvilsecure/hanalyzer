@@ -118,9 +118,6 @@ func CollectOutput(outputFile string, checkType string) {
 		}
 	}
 	if exists && empty || !exists {
-		if exists && empty {
-			logger.Log.Debugf("File '%s' is empty I will replace it.\n", outputFile)
-		}
 		Out.ScansDetails = append(Out.ScansDetails, scanDetails)
 		for _, check := range CheckList {
 			if check.Error != nil {
@@ -166,7 +163,6 @@ func CollectOutput(outputFile string, checkType string) {
 			return
 		}
 	} else if exists && !empty {
-		logger.Log.Debugf("File '%s' is not empty I will add results to it.\n", outputFile)
 		var PreviousOut *Output
 		file, err := os.Open(outputFile)
 		if err != nil {

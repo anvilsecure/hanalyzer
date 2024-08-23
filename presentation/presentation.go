@@ -57,9 +57,6 @@ func Render(path string) {
 		sshScanDetails.Categories = extractCategories(out.Checks, checks.SSHType.String())
 	}
 
-	logger.Log.Debugf("queryScanDetails.Categories = %v\n", queryScanDetails.Categories)
-	logger.Log.Debugf("sshScanDetails.Categories = %v\n", sshScanDetails.Categories)
-
 	// Execute the template and write to the file
 	err = tmpl.ExecuteTemplate(fileOut, "template.html", struct {
 		CheckType        string               `json:"CheckType"`
