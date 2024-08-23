@@ -1,6 +1,8 @@
 package presentation
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"hana/checks"
@@ -78,4 +80,11 @@ func prettifyJSON(v interface{}) (string, error) {
 		return "", err
 	}
 	return string(jsonData), nil
+}
+
+// generateRandomID generates a random alphanumeric string of specified length
+func generateRandomID() string {
+	bytes := make([]byte, 8)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)[:8]
 }
