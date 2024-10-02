@@ -1,25 +1,23 @@
 name: Build & Release
 
 on:
-  push:
-    branches:
-      - main # or any other branch you want to build and release from
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
 
 jobs:
   build-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # This is necessary for the `make` command to work properly
-
+      - uses: actions/checkout@v4
       - name: Compile binaries
         run: |
           make
-
-      - name: Create release
-        uses: actions/create-release@v2
+      - name: GH Release
+        uses: softprops/action-gh-release@v2.0.8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          prerelease: false
+          files: |
+            build/**
