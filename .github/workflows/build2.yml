@@ -1,0 +1,25 @@
+name: Build & Release
+
+on:
+  push:
+    branches:
+      - main # or any other branch you want to build and release from
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # This is necessary for the `make` command to work properly
+
+      - name: Compile binaries
+        run: |
+          make
+
+      - name: Create release
+        uses: actions/create-release@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          prerelease: false
