@@ -18,6 +18,16 @@ var sshCmd = &cobra.Command{
 	Use:   "ssh",
 	Short: "Use SSH to perform the following checks on the DB server:\n\t\t\t- Encryption Key of the SAP HANA Secure User Store",
 	Run: func(cmd *cobra.Command, args []string) {
+		// ----------------------------------
+		//      prepare output folder
+		// ----------------------------------
+		outputPath, err := utils.PrepareOutputFolder(outputFolder)
+		if err != nil {
+			log.Fatalf("error while preparing output folder: %s\n", err.Error())
+		}
+		logger.Log = logger.NewLogger(outputPath)
+		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
+		// ----------------------------------
 		checkType := checks.SSHType
 		if err := validateSSHFlags(); err != nil {
 			logger.Log.Error(err.Error())
@@ -41,16 +51,6 @@ var sshCmd = &cobra.Command{
 			config.Conf.SSH.Username = sshUsername
 			config.Conf.SSH.Password = sshPassword
 		}
-		// ----------------------------------
-		//      prepare output folder
-		// ----------------------------------
-		outputPath, err := utils.PrepareOutputFolder(outputFolder)
-		if err != nil {
-			log.Fatalf("error while preparing output folder: %s\n", err.Error())
-		}
-		logger.Log = logger.NewLogger(outputPath)
-		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
-		// ----------------------------------
 
 		ssh.Config()
 		checks.CURRENT_CHECK_TYPE = checkType.String()

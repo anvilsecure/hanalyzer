@@ -18,6 +18,16 @@ var queryCmd = &cobra.Command{
 	Use:   "query",
 	Short: "Perform checks by querying the DB.",
 	Run: func(cmd *cobra.Command, args []string) {
+		// ----------------------------------
+		//      prepare output folder
+		// ----------------------------------
+		outputPath, err := utils.PrepareOutputFolder(outputFolder)
+		if err != nil {
+			log.Fatalf("error while preparing output folder: %s\n", err.Error())
+		}
+		logger.Log = logger.NewLogger(outputPath)
+		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
+		// ----------------------------------
 		checkType := checks.QueryType
 		if err := validateDBFlags(); err != nil {
 			logger.Log.Error(err.Error())
@@ -43,16 +53,6 @@ var queryCmd = &cobra.Command{
 			config.Conf.Database.Username = dbUsername
 			config.Conf.Database.Password = dbPassword
 		}
-		// ----------------------------------
-		//      prepare output folder
-		// ----------------------------------
-		outputPath, err := utils.PrepareOutputFolder(outputFolder)
-		if err != nil {
-			log.Fatalf("error while preparing output folder: %s\n", err.Error())
-		}
-		logger.Log = logger.NewLogger(outputPath)
-		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
-		// ----------------------------------
 
 		db.Config()
 		checks.CURRENT_CHECK_TYPE = checkType.String()
