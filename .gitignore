@@ -8,3 +8,4 @@ build/**
 saphanalyzer_warnings_*
 out.json
 */output.html
+.DS_Store
