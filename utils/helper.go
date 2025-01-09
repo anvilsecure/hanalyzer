@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -33,11 +34,15 @@ func PrepareOutputFolder(outputFolder string) (string, error) {
 	if outputFolder == "" {
 		OutputPath = filepath.Join(cwd, fmt.Sprintf("%s_hana_output", time.Now().Format("20060102_150405")))
 	} else {
-		OutputPath = filepath.Join(cwd, outputFolder)
+		if strings.HasPrefix(outputFolder, "/") {
+			OutputPath = outputFolder
+		} else {
+			OutputPath = filepath.Join(cwd, outputFolder)
+		}
 	}
 	exists, err := FolderExists(OutputPath)
 	if err != nil {
-		return "", fmt.Errorf("checking if folder '%s' eixists: %s", OutputPath, err.Error())
+		return "", fmt.Errorf("checking if folder '%s' exists: %s", OutputPath, err.Error())
 	}
 	if !exists {
 		err = os.MkdirAll(OutputPath, os.ModePerm)
