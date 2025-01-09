@@ -164,6 +164,15 @@ ssh:
 # Cross Compile
 To cross compile the executables for every architecture and every OS it was used a Makefile with no external dependency to increase the reusability.
 
+## Example
+### MacOS arm64
+`make darwin/arm64`
+### Linux amd64
+`make linux/amd64`
+### Windows amd64
+`make windows/amd64`
+
+## Makefile
 ```bash
 $ make
 make build/linux/amd64; make build/linux/386; make build/linux/arm; make build/linux/arm64; make build/darwin/amd64; make build/darwin/arm64; make build/freebsd/amd64; make build/freebsd/386; make build/windows/amd64; make build/windows/386;
