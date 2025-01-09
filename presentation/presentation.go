@@ -1,14 +1,19 @@
 package presentation
 
 import (
+	"embed"
+	_ "embed"
 	"encoding/json"
 	"hana/checks"
 	"hana/logger"
-	"html/template"
 	"io"
 	"os"
 	"path/filepath"
+	"text/template"
 )
+
+//go:embed static/template.html
+var tmplFile embed.FS
 
 func Render(path string) {
 	file, err := os.Open(filepath.Join(path, outputFile))
@@ -25,27 +30,24 @@ func Render(path string) {
 		panic(err)
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		logger.Log.Errorf("failed to get CWD: %s\n", err.Error())
-		os.Exit(1)
-	}
-	tmpFileName := filepath.Join(cwd, "static/template.html")
-	tmpl, err := template.New("webpage").Funcs(template.FuncMap{
+	tmpl, err := template.New("template.html").Funcs(template.FuncMap{
 		"groupByCategory":   groupByCategory,
 		"hasPrefix":         hasPrefix,
 		"scanDetailsOfType": scanDetailsOfType,
 		"prettifyJSON":      prettifyJSON,
 		"generateRandomID":  generateRandomID,
-	}).ParseFiles(tmpFileName)
+	}).ParseFS(tmplFile, "static/template.html")
 	if err != nil {
+		/*logger.Log.Error(err.Error())
+		os.Exit(1)*/
 		panic(err)
 	}
 
 	// Create an HTML file
 	fileOut, err := os.Create(filepath.Join(path, "output.html"))
 	if err != nil {
-		panic(err)
+		logger.Log.Error(err.Error())
+		os.Exit(1)
 	}
 	defer fileOut.Close()
 
