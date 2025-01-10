@@ -2,7 +2,6 @@ package presentation
 
 import (
 	"embed"
-	_ "embed"
 	"encoding/json"
 	"hana/checks"
 	"hana/logger"
