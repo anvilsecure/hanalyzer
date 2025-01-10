@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		logger.Log.Error(err.Error())
+		logger.Log.Info(err.Error())
 		os.Exit(1)
 	}
 }

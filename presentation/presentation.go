@@ -38,9 +38,8 @@ func Render(path string) {
 		"generateRandomID":  generateRandomID,
 	}).ParseFS(tmplFile, "static/template.html")
 	if err != nil {
-		/*logger.Log.Error(err.Error())
-		os.Exit(1)*/
-		panic(err)
+		logger.Log.Error(err.Error())
+		os.Exit(1)
 	}
 
 	// Create an HTML file
