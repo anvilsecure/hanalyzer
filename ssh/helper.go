@@ -2,7 +2,8 @@ package ssh
 
 import (
 	"fmt"
-	"log"
+	"hana/logger"
+	"os"
 	"syscall"
 
 	"golang.org/x/term"
@@ -16,7 +17,8 @@ func askForCredentials() {
 	fmt.Print("Enter password: ")
 	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
-		log.Fatalf(err.Error())
+		logger.Log.Error(err.Error())
+		os.Exit(1)
 	}
 	password := string(bytePassword)
 	sshCreds = SSHCreds{Username: user, Password: password}
