@@ -112,9 +112,9 @@ func EvaluateResults(checkType CheckType) {
 							EntityType: grantee.Type,
 							Privileges: grantee.Privileges,
 						})
-						info += fmt.Sprintf("  - %s (entity type: %s)\n", k, grantee.Type)
+						check.Info += fmt.Sprintf("  - %s (entity type: %s)\n", k, grantee.Type)
 						for _, p := range grantee.Privileges {
-							info += fmt.Sprintf("    - %s\n", p)
+							check.Info += fmt.Sprintf("    - %s\n", p)
 						}
 						for _, p := range grantee.Privileges {
 							privileges[p] = append(privileges[p], grantee)
@@ -363,7 +363,11 @@ func EvaluateResults(checkType CheckType) {
 				} else {
 					message = fmt.Sprintf("[+] Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %d \n", check.Results[0]["COUNT"].(int64))
 					check.IssuesPresent = false
-					info = fmt.Sprintf("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
+					if len(preAuditing.Results) > 0 {
+						info = fmt.Sprintf("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
+					} else {
+						info = fmt.Sprintf("The total number of auditing policies found is: %d.\n", 0)
+					}
 				}
 				check.Out = message
 				check.Info = info
