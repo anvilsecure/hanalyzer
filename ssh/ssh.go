@@ -3,8 +3,9 @@ package ssh
 import (
 	"bytes"
 	"hana/config"
-	"log"
+	"hana/logger"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
@@ -44,7 +45,8 @@ func Config() {
 	sshHost := net.JoinHostPort(config.Conf.Host, strconv.Itoa(config.Conf.SSH.Port))
 	SSHClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		log.Fatalf(err.Error())
+		logger.Log.Error(err.Error())
+		os.Exit(1)
 	}
 	sshCreds.Password = ""
 	//defer SSHClient.Close()
