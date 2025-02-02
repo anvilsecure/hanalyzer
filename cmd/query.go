@@ -6,6 +6,7 @@ import (
 	"hana/config"
 	"hana/db"
 	"hana/logger"
+	"hana/presentation"
 	"hana/utils"
 	"log"
 	"os"
@@ -66,6 +67,8 @@ var queryCmd = &cobra.Command{
 			}
 		}
 		checks.CollectOutput(jsonOutput, checkType.String())
+		presentation.Render(utils.OutputPath)
+		logger.Log.CloseFile()
 	},
 }
 

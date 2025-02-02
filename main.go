@@ -3,8 +3,6 @@ package main
 import (
 	"hana/cmd"
 	"hana/logger"
-	"hana/presentation"
-	"hana/utils"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,6 +17,4 @@ func main() {
 		os.Exit(1)
 	}()
 	cmd.Execute()
-	presentation.Render(utils.OutputPath)
-	logger.Log.CloseFile()
 }

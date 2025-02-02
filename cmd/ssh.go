@@ -5,6 +5,7 @@ import (
 	"hana/checks"
 	"hana/config"
 	"hana/logger"
+	"hana/presentation"
 	"hana/ssh"
 	"hana/utils"
 	"log"
@@ -64,6 +65,8 @@ var sshCmd = &cobra.Command{
 			}
 		}
 		checks.CollectOutput(jsonOutput, checkType.String())
+		presentation.Render(utils.OutputPath)
+		logger.Log.CloseFile()
 	},
 }
 
