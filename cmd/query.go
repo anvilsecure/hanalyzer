@@ -27,7 +27,7 @@ var queryCmd = &cobra.Command{
 			log.Fatalf("error while preparing output folder: %s\n", err.Error())
 		}
 		logger.Log = logger.NewLogger(outputPath)
-		jsonOutput = filepath.Join(logger.Log.OutputFolder, "out.json")
+		jsonOutput = filepath.Join(logger.Log.OutputFolder, outputFileName)
 		// ----------------------------------
 		checkType := checks.QueryType
 		if err := validateDBFlags(); err != nil {

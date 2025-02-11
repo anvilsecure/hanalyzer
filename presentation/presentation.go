@@ -15,13 +15,15 @@ import (
 var tmplFile embed.FS
 
 func Render(path string) {
-	file, err := os.Open(filepath.Join(path, outputFile))
+	// open JSON output file
+	file, err := os.Open(filepath.Join(path, outputFileName))
 	if err != nil {
-		logger.Log.Errorf("Error opening existing JSON output file '%s': %s", outputFile, err.Error())
+		logger.Log.Errorf("Error opening existing JSON output file '%s': %s", outputFileName, err.Error())
 		return
 	}
 	defer file.Close()
 
+	// read JSON output file
 	byteValue, _ := io.ReadAll(file)
 	var out *checks.Output
 	err = json.Unmarshal(byteValue, &out)

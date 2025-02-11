@@ -21,6 +21,10 @@ var (
 	outputFolder string
 )
 
+const (
+	outputFileName = "output.json"
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "saphanalyzer",
 	Short: "SAP Hana Configuration Analyzer",

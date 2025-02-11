@@ -3,6 +3,6 @@ package presentation
 import "hana/checks"
 
 var (
-	Out        *checks.CheckOutput = &checks.CheckOutput{}
-	outputFile                     = "out.json"
+	Out            *checks.CheckOutput = &checks.CheckOutput{}
+	outputFileName                     = "output.json"
 )
