@@ -135,11 +135,12 @@
                                     <p><strong>Message:</strong> {{ $check.Result.Message }}</p>
                                     <p><strong>Info:</strong> {{ $check.Result.Info }}</p>
                                     <p><strong>Caveat:</strong> {{ $check.Result.Caveat }}</p>
-                                    <h5 class="mt-4">Resources</h5>
+                                    <strong>Resources:</strong>
                                     <div class="code-container">
                                         <i class="copy-icon fas fa-copy" onclick="copyToClipboard('{{.CheckName}}')"></i>
                                         <pre><code id="{{.CheckName}}">{{ prettifyJSON .Result.Resources }}</code></pre>
                                     </div>
+                                    <p><strong>Link:</strong>{{ $check }}</p>
                                 </div>
                             </div>
                         </div>
