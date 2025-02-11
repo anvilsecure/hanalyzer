@@ -75,5 +75,5 @@ func Render(path string) {
 		panic(err)
 	}
 
-	logger.Log.Info("HTML file generated successfully: output.html")
+	logger.Log.Infof("HTML file generated successfully: %s\n", filepath.Join(path, "output.html"))
 }
