@@ -35,8 +35,6 @@ func EvaluateResults(checkType CheckType) {
 				if check.Error != nil {
 					fmt.Println(check.Error.Error())
 				}
-				check.Print()
-				os.Exit(42)
 			case "CheckPasswordLifetime": // output: DONE
 				var users []map[string]interface{}
 				if check.checkEmptyResult() {
