@@ -9,51 +9,6 @@ import (
 	"os"
 )
 
-/*
-{
-    "server_ip": "<IP_address_string>",
-    "server_port": 123,
-    "sid": "<sid>",
-    "executed_checks":
-    [
-        "check_name_#1",
-        "check_name_#2"
-    ],
-    "skipped_checks":
-    [
-        "check_name_#3",
-        "check_name_#4"
-    ],
-    "checks":
-    [
-        {
-            "check_name": "<check_name_#1>",
-			"check_type": "[ssh|query]"
-            "errors": true,
-			"error_list":[
-				"check_error_#1",
-				"check_error_#2"
-			],
-            "issues": false,
-            "result": {
-				"message": "<result message string>",
-				"info": "<info message string>",
-				"caveat": "<caveat message string>",
-				"resources": [
-					{
-						"key1": "value1",
-						"key2": "value2",
-						....
-						"keyN": "valueN"
-					},
-					....
-				]
-			}
-        }
-    ]
-}
-*/
-
 var Out *Output = &Output{}
 
 type Result struct {
