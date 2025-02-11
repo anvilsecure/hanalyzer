@@ -31,38 +31,12 @@ func EvaluateResults(checkType CheckType) {
 			utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
 			case "CheckSystemUser": // output: DONE
-				if check.checkEmptyResult() {
-					check.Error = fmt.Errorf("possible error: no user found. Please check it manually")
-				} else {
-					if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
-						message = fmt.Sprintf(
-							"[+] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
-							check.Results[0]["USER_DEACTIVATED"],
-						)
-						info = fmt.Sprintf(
-							"It was deactivated in date %s and last successful connection was in date %s.",
-							check.Results[0]["DEACTIVATION_TIME"],
-							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
-						)
-						check.Out = message
-						check.Info = info
-						check.IssuesPresent = false
-						check.AffectedResources = nil
-					} else {
-						message = fmt.Sprintf(
-							"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
-							check.Results[0]["USER_DEACTIVATED"],
-						)
-						info = fmt.Sprintf(
-							"Last successful connection was in date %s.",
-							check.Results[0]["LAST_SUCCESSFUL_CONNECT"],
-						)
-						check.Out = message
-						check.Info = info
-						check.IssuesPresent = true
-						check.AffectedResources = append(check.AffectedResources, "SYSTEM")
-					}
+				check.evaluateCheckSystemUser()
+				if check.Error != nil {
+					fmt.Println(check.Error.Error())
 				}
+				check.Print()
+				os.Exit(42)
 			case "CheckPasswordLifetime": // output: DONE
 				var users []map[string]interface{}
 				if check.checkEmptyResult() {
