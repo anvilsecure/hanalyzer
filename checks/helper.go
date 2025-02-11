@@ -113,7 +113,7 @@ func newCheck(checkType CheckType, name, category, description, link, recommenda
 		Name:           name,
 		Category:       category,
 		Description:    description,
-		Link:           link,
+		Link:           Link{Title: strings.Join([]string{category, name}, " - "), URL: link},
 		Recommendation: recommendation,
 		Control:        control,
 		Parameters:     parameters,

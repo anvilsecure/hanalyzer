@@ -58,7 +58,7 @@ type Check struct {
 	Name              string
 	Category          string
 	Description       string
-	Link              string
+	Link              Link
 	Recommendation    string
 	Control           string
 	Results           Results
@@ -88,11 +88,16 @@ type CheckOutput struct {
 	CheckName     string   `json:"check_name"`
 	CheckType     string   `json:"check_type"`
 	CheckCategory string   `json:"check_category"`
-	Link          string   `json:"link"`
+	Link          Link     `json:"link"`
 	Errors        bool     `json:"errors"`
 	ErrorList     []string `json:"error_list"`
 	Issues        bool     `json:"issues"`
 	Result        Result   `json:"result"`
+}
+
+type Link struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
 }
 
 type ScanDetails struct {
