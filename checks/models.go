@@ -5,6 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type CheckType string
@@ -73,4 +75,40 @@ type entity struct {
 	Type       string
 	Name       string
 	Privileges []string
+}
+
+type Result struct {
+	Message   string        `json:"message"`
+	Resources []interface{} `json:"resources"`
+	Info      string        `json:"info"`
+	Caveat    string        `json:"caveat"`
+}
+
+type CheckOutput struct {
+	CheckName     string   `json:"check_name"`
+	CheckType     string   `json:"check_type"`
+	CheckCategory string   `json:"check_category"`
+	Link          string   `json:"link"`
+	Errors        bool     `json:"errors"`
+	ErrorList     []string `json:"error_list"`
+	Issues        bool     `json:"issues"`
+	Result        Result   `json:"result"`
+}
+
+type ScanDetails struct {
+	ScanType       string    `json:"scan_type"`
+	ServerIP       string    `json:"server_ip"`
+	ServerPort     int       `json:"server_port"`
+	Sid            string    `json:"sid"`
+	UserName       string    `json:"user_name"`
+	ExecutedChecks []string  `json:"executed_checks"`
+	SkippedChecks  []string  `json:"skipped_checks"`
+	Categories     []string  `json:"categories"`
+	Timestamp      string    `json:"timestamp"`
+	UUID           uuid.UUID `json:"uuid"`
+}
+
+type Output struct {
+	ScansDetails []ScanDetails `json:"scan_details"`
+	Checks       []CheckOutput `json:"checks"`
 }

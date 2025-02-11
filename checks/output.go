@@ -7,46 +7,19 @@ import (
 	"hana/utils"
 	"io"
 	"os"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 var Out *Output = &Output{}
 
-type Result struct {
-	Message   string        `json:"message"`
-	Resources []interface{} `json:"resources"`
-	Info      string        `json:"info"`
-	Caveat    string        `json:"caveat"`
-}
-
-type CheckOutput struct {
-	CheckName     string   `json:"check_name"`
-	CheckType     string   `json:"check_type"`
-	CheckCategory string   `json:"check_category"`
-	Errors        bool     `json:"errors"`
-	ErrorList     []string `json:"error_list"`
-	Issues        bool     `json:"issues"`
-	Result        Result   `json:"result"`
-}
-
-type ScanDetails struct {
-	ScanType       string   `json:"scan_type"`
-	ServerIP       string   `json:"server_ip"`
-	ServerPort     int      `json:"server_port"`
-	Sid            string   `json:"sid"`
-	UserName       string   `json:"user_name"`
-	ExecutedChecks []string `json:"executed_checks"`
-	SkippedChecks  []string `json:"skipped_checks"`
-	Categories     []string `json:"categories"`
-}
-
-type Output struct {
-	ScansDetails []ScanDetails `json:"scan_details"`
-	Checks       []CheckOutput `json:"checks"`
-}
-
 func CollectOutput(outputFile string, checkType string) {
 	var jsonData []byte
 	var scanDetails ScanDetails
+	scanUUID := uuid.New()
+	timestamp := time.Now().Format(logTimeFormat)
+
 	exists, empty, err := utils.FileExistsAndNotEmpty(outputFile)
 	if err != nil {
 		logger.Log.Errorf("Error while checking file '%s' existence: %s\n", outputFile, err.Error())
@@ -60,6 +33,8 @@ func CollectOutput(outputFile string, checkType string) {
 			UserName:       config.Conf.Database.Username,
 			ExecutedChecks: []string{},
 			SkippedChecks:  []string{},
+			UUID:           scanUUID,
+			Timestamp:      timestamp,
 		}
 	} else if checkType == "ssh" {
 		scanDetails = ScanDetails{
@@ -70,6 +45,8 @@ func CollectOutput(outputFile string, checkType string) {
 			UserName:       config.Conf.SSH.Username,
 			ExecutedChecks: []string{},
 			SkippedChecks:  []string{},
+			UUID:           scanUUID,
+			Timestamp:      timestamp,
 		}
 	}
 	if exists && empty || !exists {
@@ -85,6 +62,7 @@ func CollectOutput(outputFile string, checkType string) {
 					CheckName:     check.Name,
 					CheckType:     string(check.Type),
 					CheckCategory: check.Category,
+					Link:          check.Link,
 					Errors:        true,
 					ErrorList:     []string{check.Error.Error()},
 					Issues:        false,
@@ -100,6 +78,7 @@ func CollectOutput(outputFile string, checkType string) {
 					CheckName:     check.Name,
 					CheckType:     string(check.Type),
 					CheckCategory: check.Category,
+					Link:          check.Link,
 					Errors:        false,
 					ErrorList:     []string{},
 					Issues:        check.IssuesPresent,
@@ -144,6 +123,7 @@ func CollectOutput(outputFile string, checkType string) {
 						CheckName:     check.Name,
 						CheckType:     string(check.Type),
 						CheckCategory: check.Category,
+						Link:          check.Link,
 						Errors:        true,
 						ErrorList:     []string{check.Error.Error()},
 						Issues:        false,
@@ -159,6 +139,7 @@ func CollectOutput(outputFile string, checkType string) {
 						CheckName:     check.Name,
 						CheckType:     string(check.Type),
 						CheckCategory: check.Category,
+						Link:          check.Link,
 						Errors:        false,
 						ErrorList:     []string{},
 						Issues:        check.IssuesPresent,
