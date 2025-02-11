@@ -140,7 +140,7 @@
                                         <i class="copy-icon fas fa-copy" onclick="copyToClipboard('{{.CheckName}}')"></i>
                                         <pre><code id="{{.CheckName}}">{{ prettifyJSON .Result.Resources }}</code></pre>
                                     </div>
-                                    <p><strong>Link:</strong>{{ $check }}</p>
+                                    <p><strong>Links: </strong><li>{{ $check.Link }}</li></p>
                                 </div>
                             </div>
                         </div>
