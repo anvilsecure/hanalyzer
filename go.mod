@@ -27,6 +27,7 @@ require (
 
 require (
 	github.com/briandowns/spinner v1.23.1
+	github.com/google/uuid v1.6.0
 	github.com/theckman/yacspin v0.13.12
 	golang.org/x/crypto v0.21.0
 	golang.org/x/term v0.21.0
