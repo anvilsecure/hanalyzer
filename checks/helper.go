@@ -32,7 +32,7 @@ func executeQuery(query string) (Results, error) {
 			case time.Time:
 				_ = t
 				x := val.(time.Time)
-				val = fmt.Sprint(x.Format("2006-01-02 15:04:05"))
+				val = fmt.Sprint(x.Format(readableTimeFormat))
 			default:
 				if rv := reflect.ValueOf(val); !rv.IsValid() || rv.IsNil() {
 					val = "NULL"

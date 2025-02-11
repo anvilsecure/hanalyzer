@@ -27,6 +27,8 @@ const (
 	QueryType                            CheckType = "query"
 	SSHType                              CheckType = "ssh"
 	MONTH                                          = time.Duration(731) * time.Hour
+	readableTimeFormat                             = "2006-01-02 15:04:05"
+	logTimeFormat                                  = "20060102_150405"
 	checkSystemUser                      string    = `SELECT USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE USER_NAME = 'SYSTEM'`
 	checkPasswordLifetime                string    = `SELECT USER_NAME, USER_DEACTIVATED, DEACTIVATION_TIME, LAST_SUCCESSFUL_CONNECT FROM "PUBLIC".USERS WHERE IS_PASSWORD_LIFETIME_CHECK_ENABLED = 'FALSE'`
 	systemPrivileges                     string    = `SELECT DISTINCT GRANTEE, GRANTEE_TYPE, PRIVILEGE FROM EFFECTIVE_PRIVILEGE_GRANTEES WHERE OBJECT_TYPE = 'SYSTEMPRIVILEGE' AND PRIVILEGE IN (%s) AND GRANTEE NOT IN ('SYSTEM', '_SYS_REPO') AND GRANTEE NOT IN ('SYSTEM', '_SYS_REPO')`

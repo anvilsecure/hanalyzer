@@ -12,6 +12,10 @@ var (
 	OutputPath string
 )
 
+const (
+	logTimeFormat = "20060102_150405"
+)
+
 // PrepareOutputFolder creates the output folder given the input outputFolder
 // variable. If it is an empty string the output folder name format will be
 // YYYYMMDD_hhmm_hana_output. The output folder will be created in the CWD.
@@ -32,7 +36,7 @@ func PrepareOutputFolder(outputFolder string) (string, error) {
 		return "", fmt.Errorf("reading CWD: %s", err.Error())
 	}
 	if outputFolder == "" {
-		OutputPath = filepath.Join(cwd, fmt.Sprintf("%s_hana_output", time.Now().Format("20060102_150405")))
+		OutputPath = filepath.Join(cwd, fmt.Sprintf("%s_hana_output", time.Now().Format(logTimeFormat)))
 	} else {
 		if strings.HasPrefix(outputFolder, "/") {
 			OutputPath = outputFolder

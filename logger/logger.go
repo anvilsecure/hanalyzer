@@ -24,6 +24,7 @@ const (
 	DEBUG
 	WARN
 	ERROR
+	logTimeFormat = "20060102_150405"
 )
 
 // Logger struct defines the logger.
@@ -36,7 +37,7 @@ type Logger struct {
 
 // NewLogger creates a new Logger.
 func NewLogger(outputPath string) *Logger {
-	currentTime := time.Now().Format("01022006_150405")
+	currentTime := time.Now().Format(logTimeFormat)
 	fileName := fmt.Sprintf("saphanalyzer_warnings_%s.log", currentTime)
 	filePath := filepath.Join(outputPath, fileName)
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -63,7 +64,7 @@ func (l *Logger) CloseFile() {
 
 // logMessage logs a message with the given log level and color.
 func (l *Logger) logMessage(level LogLevel, message string) {
-	currentTime := time.Now().Format("01/02/2006_15:04:05")
+	currentTime := time.Now().Format(logTimeFormat)
 	var logPrefix, colorMessage string
 
 	switch level {
