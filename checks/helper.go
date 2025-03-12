@@ -7,6 +7,7 @@ import (
 	"hana/logger"
 	"hana/ssh"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -70,6 +71,12 @@ func ExecuteChecks(checkType CheckType) {
 			case QueryType:
 				if len(check.Parameters) == 0 {
 					if check.Name == "CriticalCombinations" {
+						/*
+							This is a workaround. It is not possible to issue queries like this
+							`SELECT DISTINCT USER_NAME, PRIVILEGE FROM "PUBLIC".EFFECTIVE_PRIVILEGES WHERE OBJECT_TYPE = SYSTEMPRIVILEGE' AND USER_NAME IN (SELECT USER_NAME FROM "SYS".USERS);`
+							This is a known limitation in SAP HANA when querying M_* or EFFECTIVE_* views.
+							https://community.sap.com/t5/technology-q-a/system-table-to-get-all-users-and-roles-assigned-to-that-users/qaq-p/12183502
+						*/
 						err := getAllUsers()
 						if err != nil {
 							check.Error = err
@@ -77,6 +84,8 @@ func ExecuteChecks(checkType CheckType) {
 						}
 						p := "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
 						check.Control = fmt.Sprintf(criticalCombinations, p)
+						fmt.Println(check.Control)
+						os.Exit(42)
 					}
 					check.Results, check.Error = executeQuery(check.Control)
 				} else {
