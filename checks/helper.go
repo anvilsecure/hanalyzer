@@ -7,7 +7,6 @@ import (
 	"hana/logger"
 	"hana/ssh"
 	"log"
-	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -84,8 +83,6 @@ func ExecuteChecks(checkType CheckType) {
 						}
 						p := "USER_NAME = '" + strings.Join(userNames, "' OR USER_NAME = '") + "'"
 						check.Control = fmt.Sprintf(criticalCombinations, p)
-						fmt.Println(check.Control)
-						os.Exit(42)
 					}
 					check.Results, check.Error = executeQuery(check.Control)
 				} else {
