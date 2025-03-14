@@ -3,7 +3,7 @@
 # Goal
 This tool was designed to analyze configuration of SAP HANA instances and compare it with official security guidelines.
 
-![Demo](blob/main/demo.gif)
+![Demo](./demo.gif)
 
 # How to use it
 
