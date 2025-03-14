@@ -3,7 +3,7 @@
 # Goal
 This tool was designed to analyze configuration of SAP HANA instances and compare it with official security guidelines.
 
-> In the following demo the .env file contains the following line
+> In the following demo the .env file contains the following line  
 > `export HANA_DB_PASSWORD=_myVerySecr3tPassw0rd_`
 
 ![Demo](./demo.gif)
