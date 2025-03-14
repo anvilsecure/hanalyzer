@@ -18,6 +18,13 @@ You can filter by checks that reported (or not) an issue and/or by category
 Opening an issue you'll see the following details
 ![Issue example](./pictures/03.png)
 
+
+<div align="center">
+    <img src="https://github.com/anvilventures/hana/blob/main/pictures/01.png" width="412px"/> 
+    <img src="https://github.com/anvilventures/hana/blob/main/pictures/02.png" width="412px"/>
+</div>
+
+
 # How to use it
 
 ## Modes
