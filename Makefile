@@ -1,6 +1,9 @@
 # Output directory
 OUTPUT_DIR = build
 
+# Name of output binary
+NAME = "hanalyzer"
+
 # List of target OS and architecture combinations
 TARGETS = \
     linux/amd64 \
@@ -31,7 +34,7 @@ build/%: create_output_dir
 	@echo "Building for $*..."
 	$(eval GOOS=$(word 1, $(subst /, ,$*)))
 	$(eval GOARCH=$(word 2, $(subst /, ,$*)))
-	$(eval OUTPUT_NAME=saphanalyzer_$(GOOS)_$(GOARCH)$(if $(findstring windows,$(GOOS)),.exe))
+	$(eval OUTPUT_NAME=$(NAME)r_$(GOOS)_$(GOARCH)$(if $(findstring windows,$(GOOS)),.exe))
 	@echo "GOOS=$(GOOS), GOARCH=$(GOARCH), OUTPUT_NAME=$(OUTPUT_NAME)"
 	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/$(OUTPUT_NAME) main.go
 	@if [ $$? -ne 0 ]; then \
