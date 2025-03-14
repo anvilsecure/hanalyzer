@@ -8,6 +8,19 @@ This tool was designed to analyze configuration of SAP HANA instances and compar
 
 ![Demo](./demo.gif)
 
+Once you ran the tool, you can open the output file with a browser, and you'll get the following HTML report.
+
+![Initial screen](./pictures/00.png)
+
+You can filter by checks that reported (or not) an issue
+![Issue/No Issue filter](./pictures/01.png)
+
+and/or by category
+![Category filter](./pictures/02.png)
+
+Opening an issue you'll see the following details
+![Issue example](./pictures/03.png)
+
 # How to use it
 
 ## Modes
