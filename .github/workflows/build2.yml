@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compile binaries
         run: |
-          make
+          make clean; make everything
       - name: Test
         run : |
           ls build/
