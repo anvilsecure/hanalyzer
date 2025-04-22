@@ -1,6 +1,7 @@
 module hana
 
 go 1.21.3
+toolchain go1.24.1
 
 require (
 	github.com/SAP/go-hdb v1.8.11
@@ -22,16 +23,15 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/tealeg/xlsx v1.0.5 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 )
 
 require (
-	github.com/briandowns/spinner v1.23.1
 	github.com/google/uuid v1.6.0
 	github.com/theckman/yacspin v0.13.12
-	golang.org/x/crypto v0.21.0
-	golang.org/x/term v0.21.0
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/crypto v0.35.0
+	golang.org/x/term v0.29.0
+	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/agrison/go-tablib.v1 v1.0.0-20160308103503-aa8e7a088a68
 	gopkg.in/yaml.v2 v2.4.0
 )
