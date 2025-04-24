@@ -69,17 +69,17 @@
         <!-- Bootstrap Tabs -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item">
-                <a class="nav-link" id="query-tab" data-toggle="tab" href="#query" role="tab" aria-controls="query" aria-selected="true">Query Checks</a>
+                <a class="nav-link active" id="query-tab" data-toggle="tab" href="#query" role="tab" aria-controls="query" aria-selected="true">Query Checks</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active" id="ssh-tab" data-toggle="tab" href="#ssh" role="tab" aria-controls="ssh" aria-selected="false">SSH Checks</a>
+                <a class="nav-link" id="ssh-tab" data-toggle="tab" href="#ssh" role="tab" aria-controls="ssh" aria-selected="false">SSH Checks</a>
             </li>
         </ul>
 
         <!--TABS-->
         <div class="tab-content" id="myTabContent">
             <!-- TAB#1: Query Checks -->
-            <div class="tab-pane fade" id="query" role="tabpanel" aria-labelledby="query-tab">
+            <div class="tab-pane fade show active" id="query" role="tabpanel" aria-labelledby="query-tab">
                 <br>
                 <p><strong>Server IP:</strong>{{ .QueryScanDetails.ServerIP }}</p>
                 <p><strong>Server Port:</strong>{{ .QueryScanDetails.ServerPort }}</p>
@@ -152,7 +152,7 @@
             </div>
 
             <!-- TAB#2: SSH Checks -->
-            <div class="tab-pane fade show active" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
+            <div class="tab-pane fade" id="ssh" role="tabpanel" aria-labelledby="ssh-tab">
                 <br>
                 <!-- Filter for SSH Checks -->
                 <p><strong>Server IP:</strong> {{.SSHScanDetails.ServerIP}}</p>
