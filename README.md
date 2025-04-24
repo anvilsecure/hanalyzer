@@ -28,11 +28,11 @@ There are two possible mode of analysis
 The only check that was not possible to implement via query is [Encryption Key of the SAP HANA Secure User Store](https://help.sap.com/docs/SAP_HANA_COCKPIT/afa922439b204e9caf22c78b6b69e4f2/904911eb0fe54124b10dfaeadb5337ce.html?version=2.12.0.0#encryption-key-of-the-sap-hana-secure-user-store-(hdbuserstore)).
 
 ```bash
-$ saphanalyzer -h
+$ hanalyzer -h
 Tool to analyze SAP Hana database configuration against official SAP guidelines.
 
 Usage:
-  saphanalyzer [command]
+  hanalyzer [command]
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
@@ -42,9 +42,9 @@ Available Commands:
                         - Encryption Key of the SAP HANA Secure User Store
 
 Flags:
-  -h, --help   help for saphanalyzer
+  -h, --help   help for hanalyzer
 
-Use "saphanalyzer [command] --help" for more information about a command.
+Use "hanalyzer [command] --help" for more information about a command.
 ```
 
 ### Query mode
@@ -53,11 +53,11 @@ Most of the checks are performed via DB queries.
 > The DB password must be exported to environment variable HANA_DB_PASSWORD to avoid passing it via CLI arguments
 
 ```bash
-$ saphanalyzer -h
+$ hanalyzer -h
 Perform checks by querying the DB.
 
 Usage:
-  saphanalyzer query [flags]
+  hanalyzer query [flags]
 
 Flags:
       --conf string          Provide configuration file (required if --host, --db-port, --db-username, --db-password, and --sid are not provided by CLI)
@@ -79,12 +79,12 @@ One check is performed by issuing a command via SSH.
 > The SSH password must be exported to environment variable HANA_SSH_PASSWORD to avoid passing it via CLI arguments
 
 ```bash
-$ saphanalyzer -h
+$ hanalyzer -h
 Use SSH to perform the following checks on the DB server:
                         - Encryption Key of the SAP HANA Secure User Store
 
 Usage:
-  saphanalyzer ssh [flags]
+  hanalyzer ssh [flags]
 
 Flags:
       --conf string           Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)
@@ -101,7 +101,7 @@ You can use a configuration file (`--conf <file.yml>`) or provide the required p
 #### Query mode examples
 Using a [configuration file](#configuration-file)
 ```bash
-$ saphanalyzer query --conf .\conf.yml
+$ hanalyzer query --conf .\conf.yml
 Check: CheckSystemUser
 [!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
 Last successful connection was in date 2024-07-19 15:19:46.
@@ -121,7 +121,7 @@ Check: SystemPrivileges
 
 Using CLI parameters
 ```bash
-$ saphanalyzer query --host <hostname/IP_address> --sid <SID> --db-username <DBUsername> --db-password <DBPassword>
+$ hanalyzer query --host <hostname/IP_address> --sid <SID> --db-username <DBUsername> --db-password <DBPassword>
 Check: CheckSystemUser
 [!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
 Last successful connection was in date 2024-07-19 15:19:46.
@@ -142,7 +142,7 @@ Check: SystemPrivileges
 #### SSH mode examples
 Using a [configuration file](#configuration-file)
 ```bash
-$ saphanalyzer ssh --conf .\conf.yml
+$ hanalyzer ssh --conf .\conf.yml
 Check: CheckSystemUser
 Check: EncryptionKeySAPHANASecureUserStore
 [+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
@@ -151,7 +151,7 @@ Check: EncryptionKeySAPHANASecureUserStore
 
 Using CLI parameters
 ```bash
-$ saphanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername> --ssh-password <DBPassword>
+$ hanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername> --ssh-password <DBPassword>
 Check: EncryptionKeySAPHANASecureUserStore
 [+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
 ```
@@ -191,43 +191,43 @@ $ make
 make build/linux/amd64; make build/linux/386; make build/linux/arm; make build/linux/arm64; make build/darwin/amd64; make build/darwin/arm64; make build/freebsd/amd64; make build/freebsd/386; make build/windows/amd64; make build/windows/386;
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for linux/amd64...
-GOOS=linux, GOARCH=amd64, OUTPUT_NAME=saphanalyzer_linux_amd64
+GOOS=linux, GOARCH=amd64, OUTPUT_NAME=hanalyzer_linux_amd64
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for linux/386...
-GOOS=linux, GOARCH=386, OUTPUT_NAME=saphanalyzer_linux_386
+GOOS=linux, GOARCH=386, OUTPUT_NAME=hanalyzer_linux_386
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for linux/arm...
-GOOS=linux, GOARCH=arm, OUTPUT_NAME=saphanalyzer_linux_arm
+GOOS=linux, GOARCH=arm, OUTPUT_NAME=hanalyzer_linux_arm
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for linux/arm64...
-GOOS=linux, GOARCH=arm64, OUTPUT_NAME=saphanalyzer_linux_arm64
+GOOS=linux, GOARCH=arm64, OUTPUT_NAME=hanalyzer_linux_arm64
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for darwin/amd64...
-GOOS=darwin, GOARCH=amd64, OUTPUT_NAME=saphanalyzer_darwin_amd64
+GOOS=darwin, GOARCH=amd64, OUTPUT_NAME=hanalyzer_darwin_amd64
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for darwin/arm64...
-GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=saphanalyzer_darwin_arm64
+GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=hanalyzer_darwin_arm64
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for freebsd/amd64...
-GOOS=freebsd, GOARCH=amd64, OUTPUT_NAME=saphanalyzer_freebsd_amd64
+GOOS=freebsd, GOARCH=amd64, OUTPUT_NAME=hanalyzer_freebsd_amd64
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for freebsd/386...
-GOOS=freebsd, GOARCH=386, OUTPUT_NAME=saphanalyzer_freebsd_386
+GOOS=freebsd, GOARCH=386, OUTPUT_NAME=hanalyzer_freebsd_386
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for windows/amd64...
-GOOS=windows, GOARCH=amd64, OUTPUT_NAME=saphanalyzer_windows_amd64.exe
+GOOS=windows, GOARCH=amd64, OUTPUT_NAME=hanalyzer_windows_amd64.exe
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
 Building for windows/386...
-GOOS=windows, GOARCH=386, OUTPUT_NAME=saphanalyzer_windows_386.exe
+GOOS=windows, GOARCH=386, OUTPUT_NAME=hanalyzer_windows_386.exe
 make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 ```
 
