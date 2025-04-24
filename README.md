@@ -73,6 +73,11 @@ One check is performed by issuing a command via SSH.
 
 > The SSH password must be exported to environment variable HANA_SSH_PASSWORD to avoid passing it via CLI arguments
 
+> For the time being the connection uses `InsecureIgnoreHostKey` flag. The roadmap already forsees fixing this behavior, giving users the options to 
+>   * Interactively accept the host key fingerprint
+>   * Provide the expected host key or to read the `known_hosts` file
+>   * Use an "insecure" flag to explicitly disable host key checks
+
 ```bash
 $ hanalyzer ssh --help  
 Use SSH to perform the following checks on the DB server:
@@ -188,6 +193,18 @@ It is also possible to compile the binary file for different platforms:
 * Windows amd64: `make windows/amd64`
 
 # Roadmap
+
+- [ ] Add sudo support for SSH commands
+- [ ] Improve HTML output
+  - [ ] Dark mode
+- [x] Git actions to automatically compile releases
+- [ ] Bundle JS dependencies with the code, to provide full-offline experience
+- [ ] SSH Authentication
+  - [ ] Add public key authentication
+  - [ ] It is used `InsecureIgnoreHostKey`; add
+    - [ ] Interactive way to accept the host key fingerprint (custom HostKeyCallback)
+    - [ ] Option to provide the expected host key or to read the `known_hosts` file
+    - [ ] Add "insecure" flag to explicitly disable host key checks
 
 ## SAP HANA Database Checklists and Recommendations
 
