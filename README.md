@@ -186,51 +186,13 @@ To cross compile the executables for every architecture and every OS it was used
 `make windows/amd64`
 
 ## Makefile
+Building the realease for the detected architecture and OS
 ```bash
 $ make
-make build/linux/amd64; make build/linux/386; make build/linux/arm; make build/linux/arm64; make build/darwin/amd64; make build/darwin/arm64; make build/freebsd/amd64; make build/freebsd/386; make build/windows/amd64; make build/windows/386;
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for linux/amd64...
-GOOS=linux, GOARCH=amd64, OUTPUT_NAME=hanalyzer_linux_amd64
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for linux/386...
-GOOS=linux, GOARCH=386, OUTPUT_NAME=hanalyzer_linux_386
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for linux/arm...
-GOOS=linux, GOARCH=arm, OUTPUT_NAME=hanalyzer_linux_arm
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for linux/arm64...
-GOOS=linux, GOARCH=arm64, OUTPUT_NAME=hanalyzer_linux_arm64
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for darwin/amd64...
-GOOS=darwin, GOARCH=amd64, OUTPUT_NAME=hanalyzer_darwin_amd64
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
+/Library/Developer/CommandLineTools/usr/bin/make build/darwin/arm64
 Building for darwin/arm64...
 GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=hanalyzer_darwin_arm64
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for freebsd/amd64...
-GOOS=freebsd, GOARCH=amd64, OUTPUT_NAME=hanalyzer_freebsd_amd64
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for freebsd/386...
-GOOS=freebsd, GOARCH=386, OUTPUT_NAME=hanalyzer_freebsd_386
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for windows/amd64...
-GOOS=windows, GOARCH=amd64, OUTPUT_NAME=hanalyzer_windows_amd64.exe
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
-make[1]: Entering directory '/cygdrive/c/Users/user/Documents/github/hana'
-Building for windows/386...
-GOOS=windows, GOARCH=386, OUTPUT_NAME=hanalyzer_windows_386.exe
-make[1]: Leaving directory '/cygdrive/c/Users/user/Documents/github/hana'
 ```
-
 
 # Roadmap
 
