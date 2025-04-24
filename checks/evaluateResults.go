@@ -76,9 +76,9 @@ func EvaluateResults(checkType CheckType) {
 					check.Info = "[I] Breakdown per grantee\n"
 					for k, grantee := range grantees {
 						affectedResources = append(affectedResources, struct {
-							Entity     string   "json:\"Entity\""
-							EntityType string   "json:\"EntityType\""
-							Privileges []string "json:\"Privileges\""
+							Entity     string   `json:"Entity"`
+							EntityType string   `json:"EntityType"`
+							Privileges []string `json:"Privileges"`
 						}{
 							Entity:     grantee.Name,
 							EntityType: grantee.Type,
@@ -135,9 +135,9 @@ func EvaluateResults(checkType CheckType) {
 					var printed []string
 					for _, user := range issues {
 						var affectedResource = struct {
-							Entity     string   "json:\"Entity\""
-							EntityType string   "json:\"EntityType\""
-							Privileges []string "json:\"Privileges\""
+							Entity     string   `json:"Entity"`
+							EntityType string   `json:"EntityType"`
+							Privileges []string `json:"Privileges"`
 						}{
 							Entity:     user.Name,
 							EntityType: user.Type,
