@@ -44,7 +44,7 @@ var sshCmd = &cobra.Command{
 			sshPassword = os.Getenv("HANA_SSH_PASSWORD")
 			if sshPassword == "" {
 				logger.Log.Error("Environment variable HANA_SSH_PASSWORD is empty or not set.")
-				logger.Log.Info("Please provide the DB password by setting it:\nexport HANA_SSH_PASSWORD=myverysecretpassword")
+				logger.Log.Info("Please provide the SSH password by setting it:\nexport HANA_SSH_PASSWORD=myverysecretpassword")
 				os.Exit(1)
 			}
 			config.Conf.Host = host
