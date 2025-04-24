@@ -26,7 +26,7 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "saphanalyzer",
+	Use:   "hanalyzer",
 	Short: "SAP Hana Configuration Analyzer",
 	Long:  "Tool to analyze SAP Hana database configuration against official SAP guidelines.",
 }

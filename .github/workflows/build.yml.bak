@@ -21,6 +21,6 @@ jobs:
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v1
               with:
-                files: build/saphanalyzer_*
+                files: build/hanalyzer_*
               env:
                 GITHUB_TOKEN: $

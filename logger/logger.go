@@ -38,7 +38,7 @@ type Logger struct {
 // NewLogger creates a new Logger.
 func NewLogger(outputPath string) *Logger {
 	currentTime := time.Now().Format(logTimeFormat)
-	fileName := fmt.Sprintf("saphanalyzer_warnings_%s.log", currentTime)
+	fileName := fmt.Sprintf("hanalyzer_warnings_%s.log", currentTime)
 	filePath := filepath.Join(outputPath, fileName)
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
