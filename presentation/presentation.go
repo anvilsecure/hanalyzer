@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"hana/checks"
 	"hana/logger"
+	"html/template"
 	"io"
 	"os"
 	"path/filepath"
-	"text/template"
 )
 
 //go:embed static/template.html
