@@ -116,7 +116,7 @@ Check: SystemPrivileges
 
 Using CLI parameters
 ```bash
-$ hanalyzer query --host <hostname/IP_address> --sid <SID> --db-username <DBUsername> --db-password <DBPassword>
+$ hanalyzer query --host <hostname/IP_address> --sid <SID> --db-username <DBUsername>
 Check: CheckSystemUser
 [!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
 Last successful connection was in date 2024-07-19 15:19:46.
@@ -146,7 +146,7 @@ Check: EncryptionKeySAPHANASecureUserStore
 
 Using CLI parameters
 ```bash
-$ hanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername> --ssh-password <DBPassword>
+$ hanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername>
 Check: EncryptionKeySAPHANASecureUserStore
 [+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
 ```
@@ -172,14 +172,6 @@ ssh:
 # Cross Compile
 To cross compile the executables for every architecture and every OS it was used a Makefile with no external dependency to increase the reusability.
 
-## Example
-### MacOS arm64
-`make darwin/arm64`
-### Linux amd64
-`make linux/amd64`
-### Windows amd64
-`make windows/amd64`
-
 ## Makefile
 Building the realease for the detected architecture and OS
 ```bash
@@ -188,6 +180,12 @@ $ make
 Building for darwin/arm64...
 GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=hanalyzer_darwin_arm64
 ```
+
+It is also possible to compile the binary file for different platforms:
+
+* MacOS arm64: `make darwin/arm64`
+* Linux amd64: `make linux/amd64`
+* Windows amd64: `make windows/amd64`
 
 # Roadmap
 
@@ -244,14 +242,9 @@ GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=hanalyzer_darwin_arm64
 
 # Notes
 
-* http://hxehost:8090
-* https://hxehost:39030
-
-ssh hxeadm@hxehost
-
 IF using a VM, after the setup process you will encounter the following error
 
-```
+```bash
 Free and used memory in the system
 ==================================
 Before collection
@@ -276,7 +269,7 @@ Password already changed.  However, the new password you specified is invalid.
 
 This is solved [here](https://community.sap.com/t5/technology-q-a/hana-express-edition-28000-password-already-changed/qaq-p/12321995#answer-13321675)
 
-```
+```bash
 HDB start
 XSA reset-certificate
  
