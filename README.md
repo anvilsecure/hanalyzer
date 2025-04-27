@@ -16,10 +16,36 @@ Once you ran the tool, you can open the output file with a browser, and you'll g
 </div>
 
 
+# Install
+Build it locally or download the correct version from the [Releases page](https://github.com/anvilsecure/hanalyzer/releases)
+To build it you can run the following commands (the executable will be in the `build` folder)
+
+```bash
+$ git clone https://github.com/anvilsecure/hanalyzer.git
+$ cd hanalyzer
+$ make
+```
+
+## Cross Compile
+To cross compile the executables for every architecture and every OS it was used a Makefile with no external dependency to increase the reusability.
+
+### Makefile
+Building the realease for the detected architecture and OS
+```bash
+$ make
+/Library/Developer/CommandLineTools/usr/bin/make build/darwin/arm64
+Building for darwin/arm64...
+GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=hanalyzer_darwin_arm64
+```
+
+It is also possible to compile the binary file for different platforms:
+
+* MacOS arm64: `make darwin/arm64`
+* Linux amd64: `make linux/amd64`
+* Windows amd64: `make windows/amd64`
+
 # How to use it
-
 ## Modes
-
 There are two possible mode of analysis
 * querying the DB (36 checks)
 * invoking commands via SSH on the DB server (1 check)
@@ -66,7 +92,6 @@ Flags:
 ```
 
 You can use a configuration file (`--conf <file.yml>`) or provide the required parameters via flag ([Query mode examples](#query-mode-examples)).
-
 
 ### SSH mode
 One check is performed by issuing a command via SSH.
@@ -157,7 +182,6 @@ Check: EncryptionKeySAPHANASecureUserStore
 ```
 
 # Configuration file
-
 In the project root create the following `conf.yml` file
 
 ```yml
@@ -174,24 +198,6 @@ ssh:
 
 ```
 
-# Cross Compile
-To cross compile the executables for every architecture and every OS it was used a Makefile with no external dependency to increase the reusability.
-
-## Makefile
-Building the realease for the detected architecture and OS
-```bash
-$ make
-/Library/Developer/CommandLineTools/usr/bin/make build/darwin/arm64
-Building for darwin/arm64...
-GOOS=darwin, GOARCH=arm64, OUTPUT_NAME=hanalyzer_darwin_arm64
-```
-
-It is also possible to compile the binary file for different platforms:
-
-* MacOS arm64: `make darwin/arm64`
-* Linux amd64: `make linux/amd64`
-* Windows amd64: `make windows/amd64`
-
 # Roadmap
 
 - [ ] Add sudo support for SSH commands
@@ -207,7 +213,6 @@ It is also possible to compile the binary file for different platforms:
     - [ ] Add "insecure" flag to explicitly disable host key checks
 
 ## SAP HANA Database Checklists and Recommendations
-
 ### [Recommendations for Database Users, Roles, and Privileges](https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#password-lifetime-of-database-users)
 - [x] SYSTEM User (porting from @gvb)
 - [x] Password Lifetime of Database Users (porting from @gvb)
@@ -258,7 +263,6 @@ It is also possible to compile the binary file for different platforms:
 - [x] Restricted Features
 
 # Notes
-
 IF using a VM, after the setup process you will encounter the following error
 
 ```bash
