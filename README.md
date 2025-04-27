@@ -17,7 +17,7 @@ Once you ran the tool, you can open the output file with a browser, and you'll g
 
 
 # Install
-Build it locally or download the correct version from the [Releases page](https://github.com/anvilsecure/hanalyzer/releases)
+Build it locally or download the correct version from the [Releases page](https://github.com/anvilsecure/hanalyzer/releases).  
 To build it you can run the following commands (the executable will be in the `build` folder)
 
 ```bash
