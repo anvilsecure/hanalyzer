@@ -8,9 +8,9 @@
   * [Modes](#modes)
     + [Query mode](#query-mode)
     + [SSH mode](#ssh-mode)
-    + [Examples](#examples)
-      - [Query mode examples](#query-mode-examples)
-      - [SSH mode examples](#ssh-mode-examples)
+  * [Examples](#examples)
+    + [Query mode examples](#query-mode-examples)
+    + [SSH mode examples](#ssh-mode-examples)
 - [Configuration file](#configuration-file)
 - [Roadmap](#roadmap)
 - [Notes](#notes)
@@ -137,8 +137,8 @@ Flags:
 
 You can use a configuration file (`--conf <file.yml>`) or provide the required parameters via flag ([SSH mode examples](#ssh-mode-examples)).
 
-### Examples
-#### Query mode examples
+## Examples
+### Query mode examples
 Using a [configuration file](#configuration-file)
 ```bash
 $ hanalyzer query --conf .\conf.yml
@@ -179,7 +179,7 @@ Check: SystemPrivileges
 ......
 ```
 
-#### SSH mode examples
+### SSH mode examples
 Using a [configuration file](#configuration-file)
 ```bash
 $ hanalyzer ssh --conf .\conf.yml
