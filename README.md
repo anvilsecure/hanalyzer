@@ -1,5 +1,20 @@
 <img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
 
+- [Goal](#goal)
+- [Install](#install)
+  * [Cross Compile](#cross-compile)
+    + [Makefile](#makefile)
+- [How to use it](#how-to-use-it)
+  * [Modes](#modes)
+    + [Query mode](#query-mode)
+    + [SSH mode](#ssh-mode)
+    + [Examples](#examples)
+      - [Query mode examples](#query-mode-examples)
+      - [SSH mode examples](#ssh-mode-examples)
+- [Configuration file](#configuration-file)
+- [Roadmap](#roadmap)
+- [Notes](#notes)
+
 # Goal
 This tool was designed to analyze configuration of SAP HANA instances and compare it with official security guidelines.
 
