@@ -35,7 +35,9 @@ func Config() {
 			Auth: []ssh.AuthMethod{
 				ssh.Password(sshCreds.Password),
 			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+		if config.Conf.SSH.IgnoreHostKey {
+			sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 		}
 	} else {
 		askForCredentials()

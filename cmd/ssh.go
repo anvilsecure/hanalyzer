@@ -51,6 +51,7 @@ var sshCmd = &cobra.Command{
 			config.Conf.SSH.Port = sshPort
 			config.Conf.SSH.Username = sshUsername
 			config.Conf.SSH.Password = sshPassword
+			config.Conf.SSH.IgnoreHostKey = sshIgnoreHostKey
 		}
 
 		ssh.Config()
@@ -93,5 +94,6 @@ func init() {
 	sshCmd.Flags().IntVar(&sshPort, "ssh-port", 22, "SSH username")
 	sshCmd.Flags().StringVar(&sshUsername, "ssh-username", "", "SSH username")
 	sshCmd.Flags().StringVar(&outputFolder, "output-folder", "", "Output folder")
+	sshCmd.Flags().BoolVar(&sshIgnoreHostKey, "ignore-host-key", false, "Ignore host key error")
 	rootCmd.AddCommand(sshCmd)
 }
