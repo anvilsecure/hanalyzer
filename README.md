@@ -119,7 +119,7 @@ One check is performed by issuing a command via SSH.
 >   * Use an "insecure" flag to explicitly disable host key checks
 
 ```bash
-$ hanalyzer ssh --help  
+$ hanalyzer ssh --help                                                 
 Use SSH to perform the following checks on the DB server:
                         - Encryption Key of the SAP HANA Secure User Store
 
@@ -130,6 +130,7 @@ Flags:
       --conf string            Provide configuration file (required if --host, --ssh-port, --ssh-username, and --ssh-password are not provided by CLI)
   -h, --help                   help for ssh
       --host string            Database host
+      --ignore-host-key        Ignore host key error
       --output-folder string   Output folder
       --ssh-port int           SSH username (default 22)
       --ssh-username string    SSH username
@@ -225,8 +226,8 @@ ssh:
   - [ ] Add public key authentication
   - [ ] It is used `InsecureIgnoreHostKey`; add
     - [ ] Interactive way to accept the host key fingerprint (custom HostKeyCallback)
-    - [ ] Option to provide the expected host key or to read the `known_hosts` file
-    - [ ] Add "insecure" flag to explicitly disable host key checks
+    - [x] Option to provide the expected host key or to read the `known_hosts` file
+    - [x] Add "insecure" flag to explicitly disable host key checks
 
 ## SAP HANA Database Checklists and Recommendations
 ### [Recommendations for Database Users, Roles, and Privileges](https://help.sap.com/docs/SAP_HANA_PLATFORM/742945a940f240f4a2a0e39f93d3e2d4/45955420940c4e80a1379bc7270cead6.html?version=2.0.05&locale=en-US#password-lifetime-of-database-users)
