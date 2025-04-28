@@ -210,6 +210,7 @@ ssh:
   port: PORT
   username: USERNAME (e.g., hxeadm)
   password: PASSWORD
+  ignore_host_key: true
 
 ```
 
