@@ -111,12 +111,11 @@ You can use a configuration file (`--conf <file.yml>`) or provide the required p
 ### SSH mode
 One check is performed by issuing a command via SSH.
 
-> The SSH password must be exported to environment variable HANA_SSH_PASSWORD to avoid passing it via CLI arguments
-
-> For the time being the connection uses `InsecureIgnoreHostKey` flag. The roadmap already forsees fixing this behavior, giving users the options to 
->   * Interactively accept the host key fingerprint
->   * Provide the expected host key or to read the `known_hosts` file
->   * Use an "insecure" flag to explicitly disable host key checks
+> * The SSH password must be exported to environment variable HANA_SSH_PASSWORD to avoid passing it via CLI arguments
+> * By default the connection uses ~/.ssh/known_hosts to check the host key
+>   * It is possible to use flag `--ignore-host-key` to ignore security checks on the host key (potentially dangerous)
+> * It supports public key authentication with `--priv-key`
+>   * TODO For the time being it does not support password protected private keys. 
 
 ```bash
 $ hanalyzer ssh --help                                                 
@@ -132,6 +131,7 @@ Flags:
       --host string            Database host
       --ignore-host-key        Ignore host key error
       --output-folder string   Output folder
+      --priv-key string        SSH private key
       --ssh-port int           SSH username (default 22)
       --ssh-username string    SSH username
 ```
@@ -197,6 +197,14 @@ Check: EncryptionKeySAPHANASecureUserStore
 [+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
 ```
 
+Using a public key authentication
+```bash
+$ ./hanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername> --output-folder 00_hanatest --priv-key ~/.ssh/id_rsa
+[INFO] 20250428_165106 Writing output data to file: /home/user/hana/00_hanatest/output.json
+
+[INFO] 20250428_165106 HTML file generated successfully: /home/user/hana/00_hanatest/output.html
+```
+
 # Configuration file
 In the project root create the following `conf.yml` file
 
@@ -211,8 +219,8 @@ ssh:
   port: PORT
   username: USERNAME (e.g., hxeadm)
   password: PASSWORD
+  private_key: /Users/johndoe/.ssh/id_rsa
   ignore_host_key: true
-
 ```
 
 # Roadmap
