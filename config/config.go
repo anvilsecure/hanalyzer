@@ -17,10 +17,12 @@ type DBConfig struct {
 }
 
 type SSHConfig struct {
-	Port          int    `yaml:"port"`
-	Username      string `yaml:"username"`
-	Password      string `yaml:"password"`
-	IgnoreHostKey bool   `yaml:"ignore_host_key"`
+	Port               int    `yaml:"port"`
+	Username           string `yaml:"username"`
+	Password           string `yaml:"password"`
+	PrivateKey         string `yaml:"private_key"`
+	PrivateKeyPassword string `yaml:"private_key_password"`
+	IgnoreHostKey      bool   `yaml:"ignore_host_key"`
 }
 
 // DatabaseConfig struct to hold database configuration data

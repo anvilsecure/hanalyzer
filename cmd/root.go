@@ -20,6 +20,7 @@ var (
 	jsonOutput       string
 	outputFolder     string
 	sshIgnoreHostKey bool
+	sshPrivKey       string
 )
 
 const (
