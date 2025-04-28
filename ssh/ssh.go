@@ -15,28 +15,44 @@ import (
 )
 
 var (
-	SSHClient *ssh.Client
-	sshCreds  SSHCreds
+	SSHClient   *ssh.Client
+	sshCreds    SSHCreds
+	AuthMethods []ssh.AuthMethod
 )
 
 type SSHCreds struct {
-	Username string `yaml:"user"`
-	Password string `yaml:"password"`
+	Username    string     `yaml:"user"`
+	Password    string     `yaml:"password"`
+	PrivKey     ssh.Signer `yaml:"priv_key"`
+	PrivKeyPass string     `yaml:"priv_key_pass"`
 }
 
 func Config() {
 	var sshConfig *ssh.ClientConfig
-	sshCreds = SSHCreds{
-		Username: config.Conf.SSH.Username,
-		Password: config.Conf.SSH.Password,
+	sshCreds.Username = config.Conf.SSH.Username
+	if config.Conf.SSH.PrivateKey != "" {
+		key, err := os.ReadFile(config.Conf.SSH.PrivateKey)
+		if err != nil {
+			logger.Log.Errorf("[SSH]Unable to read private key '%s': %s", config.Conf.SSH.PrivateKey, err.Error())
+			os.Exit(1)
+		}
+		// Create the Signer for this private key.
+		signer, err := ssh.ParsePrivateKey(key)
+		if err != nil {
+			logger.Log.Errorf("[SSH]Unable to parse private key '%s': %s", config.Conf.SSH.PrivateKey, err.Error())
+			os.Exit(1)
+		}
+		sshCreds.PrivKey = signer
+		AuthMethods = append(AuthMethods, ssh.PublicKeys(sshCreds.PrivKey))
+	} else if config.Conf.SSH.Password != "" {
+		sshCreds.Password = config.Conf.SSH.Password
+		AuthMethods = append(AuthMethods, ssh.Password(sshCreds.Password))
 	}
-	if sshCreds.Username != "" && sshCreds.Password != "" {
+	if sshCreds.Username != "" {
 		// Set up the SSH connection
 		sshConfig = &ssh.ClientConfig{
 			User: sshCreds.Username,
-			Auth: []ssh.AuthMethod{
-				ssh.Password(sshCreds.Password),
-			},
+			Auth: AuthMethods,
 		}
 		if config.Conf.SSH.IgnoreHostKey {
 			sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
