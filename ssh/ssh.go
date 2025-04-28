@@ -6,10 +6,12 @@ import (
 	"hana/logger"
 	"net"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 var (
@@ -38,6 +40,14 @@ func Config() {
 		}
 		if config.Conf.SSH.IgnoreHostKey {
 			sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+		} else {
+			knownhostsFile := path.Join(os.Getenv("HOME"), "/.ssh/known_hosts")
+			hostkeyCallback, err := knownhosts.New(knownhostsFile)
+			if err != nil {
+				logger.Log.Errorf("Error while reading '%s' file: %s", knownhostsFile, err.Error())
+				os.Exit(1)
+			}
+			sshConfig.HostKeyCallback = hostkeyCallback
 		}
 	} else {
 		askForCredentials()
@@ -47,7 +57,7 @@ func Config() {
 	sshHost := net.JoinHostPort(config.Conf.Host, strconv.Itoa(config.Conf.SSH.Port))
 	SSHClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		logger.Log.Error(err.Error())
+		logger.Log.Errorf("[ssh]Error during authentication process: %s", err.Error())
 		os.Exit(1)
 	}
 	sshCreds.Password = ""
