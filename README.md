@@ -231,7 +231,7 @@ ssh:
 - [x] Git actions to automatically compile releases
 - [ ] Bundle JS dependencies with the code, to provide full-offline experience
 - [ ] SSH Authentication
-  - [ ] Add public key authentication
+  - [x] Add public key authentication
   - [ ] It is used `InsecureIgnoreHostKey`; add
     - [ ] Interactive way to accept the host key fingerprint (custom HostKeyCallback)
     - [x] Option to provide the expected host key or to read the `known_hosts` file
