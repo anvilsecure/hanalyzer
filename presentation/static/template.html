@@ -11,13 +11,6 @@
         .filterable {
             display: none;
         }
-        .code-container {
-            position: relative;
-            background-color: #f5f5f5;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
 
         .copy-icon {
             position: absolute;
@@ -60,6 +53,20 @@
             right: 30px;
             z-index: 1000;
         }
+
+        .code-container {
+            position: relative;
+            background-color: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        [data-bs-theme="dark"] .code-container {
+            background-color: #484a4b; /* Dark mode background */
+            color: #fff; /* Dark mode text color */
+        }
+
     </style>
 </head>
 <body>
