@@ -159,7 +159,7 @@ func CollectOutput(outputFile string, checkType string) {
 			return
 		}
 	}
-	logger.Log.Infof("Writing output data to file: %s\n", outputFile)
+	logger.Log.Infof("Writing output data to file: %s", outputFile)
 	if err := os.WriteFile(outputFile, jsonData, 0666); err != nil {
 		logger.Log.Errorf("Error while writing output to '%s': %s\n", outputFile, err.Error())
 	}
