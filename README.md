@@ -227,7 +227,7 @@ ssh:
 
 - [ ] Add sudo support for SSH commands
 - [ ] Improve HTML output
-  - [ ] Dark mode
+  - [x] Dark mode
 - [x] Git actions to automatically compile releases
 - [ ] Bundle JS dependencies with the code, to provide full-offline experience
 - [ ] SSH Authentication
