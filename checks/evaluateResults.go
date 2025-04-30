@@ -28,7 +28,6 @@ func EvaluateResults(checkType CheckType) {
 			if strings.HasPrefix(check.Name, "_pre_") {
 				continue
 			}
-			//utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
 			case "CheckSystemUser": // output: DONE
 				check.evaluateCheckSystemUser()
@@ -755,12 +754,6 @@ func EvaluateResults(checkType CheckType) {
 					var resourcesAsInterface []interface{}
 					for _, resource := range affectedResources {
 						resourcesAsInterface = append(resourcesAsInterface, resource)
-						/* 						utils.Info(fmt.Sprintf(
-							"%-20s %-20s %-s\n",
-							fmt.Sprintf("%-10d byte", resource.FileSize),
-							resource.FileMTime,
-							resource.FileName,
-						)) */
 					}
 					check.AffectedResources = resourcesAsInterface
 				} else {
@@ -802,12 +795,6 @@ func EvaluateResults(checkType CheckType) {
 					var resourcesAsInterface []interface{}
 					for _, resource := range affectedResources {
 						resourcesAsInterface = append(resourcesAsInterface, resource)
-						/* utils.Info(fmt.Sprintf(
-							"%-20s %-20s %-s\n",
-							fmt.Sprintf("%-10d byte", resource.FileSize),
-							resource.FileMTime,
-							resource.FileName,
-						)) */
 					}
 					check.AffectedResources = resourcesAsInterface
 				} else {
@@ -852,23 +839,10 @@ func EvaluateResults(checkType CheckType) {
 							CertPurpose:   certPurpose,
 							CertOwnerName: certOwnerName,
 						})
-						/* 						utils.Info(fmt.Sprintf(
-							"%-20s %-20s %-20s %-s\n",
-							certPSEID,
-							certName,
-							certPurpose,
-							certOwnerName,
-						)) */
 						var resourcesAsInterface []interface{}
 						for _, resource := range affectedResources {
 							resourcesAsInterface = append(resourcesAsInterface, resource)
-							/* 							utils.Info(fmt.Sprintf(
-								"%-20s %-20s %-20s %-s\n",
-								resource.CertPSEID,
-								resource.CertName,
-								resource.CertPurpose,
-								resource.CertOwnerName,
-							)) */
+
 						}
 						check.AffectedResources = resourcesAsInterface
 					}
@@ -907,8 +881,6 @@ func EvaluateResults(checkType CheckType) {
 							f["VALUE"],
 						)
 					}
-					//out := ds.Markdown()
-					//fmt.Println(out)
 					jsonString, err := ds.JSON()
 					if err != nil {
 						logger.Log.Errorf("error while converting ds to JSON: %s\n", err.Error())
@@ -977,19 +949,7 @@ func EvaluateResults(checkType CheckType) {
 					}
 					check.AffectedResources = resourcesAsInterface
 					enabled := ds.Filter("TRUE")
-					//enabledOutput := ""
-					/* if len(enabled.Dict()) > 0 {
-						enabledOutput = enabled.Markdown()
-						utils.Info("Enabled features\n")
-						fmt.Println(enabledOutput)
-					} */
 					disabled := ds.Filter("FALSE")
-					//disabledOutput := ""
-					/* if len(disabled.Dict()) > 0 {
-						disabledOutput = disabled.Markdown()
-						utils.Info("Disabled features\n")
-						fmt.Println(disabledOutput)
-					} */
 					if len(disabled.Dict()) == 0 {
 						check.Info = "All features are enabled.\n"
 					}
@@ -1004,24 +964,7 @@ func EvaluateResults(checkType CheckType) {
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)
 				os.Exit(1)
 			}
-			// Print output
-			/* if check.IssuesPresent {
-				utils.Error(check.Out)
-				if check.Info != "" {
-					utils.Info(check.Info)
-				}
-			} else {
-				utils.Ok(check.Out)
-				if check.Info != "" {
-					utils.Info(check.Info)
-				}
-			}
-			if check.Caveat != "" {
-				utils.Warning(check.Caveat)
-			}
-			fmt.Println("\n-----------") */
 		} else if check.Type == SSHType {
-			//utils.Title("Check: %s\n", check.Name)
 			switch check.Name {
 			case "EncryptionKeySAPHANASecureUserStore":
 				out, ok := check.Results[0]["stdOut"].(string)
@@ -1039,7 +982,6 @@ func EvaluateResults(checkType CheckType) {
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)
 				os.Exit(1)
 			}
-			//fmt.Println("-----------")
 		}
 	}
 
