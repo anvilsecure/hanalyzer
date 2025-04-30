@@ -144,18 +144,18 @@ Using a [configuration file](#configuration-file)
 ```bash
 $ hanalyzer query --conf .\conf.yml
 Check: CheckSystemUser
-[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
+User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
 Last successful connection was in date 2024-07-19 15:19:46.
 -----------
 Check: CheckPasswordLifetime
-[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).
+The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).
   - SYS
   - SYSTEM
   - SAPDBCTRL
   - TEL_ADMIN
 -----------
 Check: SystemPrivileges
-[!] Please review the following entities (users/roles) because they might have too high privileges:
+Please review the following entities (users/roles) because they might have too high privileges:
 [I] Breakdown per grantee
 ......
 ```
@@ -164,18 +164,18 @@ Using CLI parameters
 ```bash
 $ hanalyzer query --host <hostname/IP_address> --sid <SID> --db-username <DBUsername>
 Check: CheckSystemUser
-[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
+User SYSTEM is ACTIVE (USER_DEACTIVATED=FALSE).
 Last successful connection was in date 2024-07-19 15:19:46.
 -----------
 Check: CheckPasswordLifetime
-[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).
+The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).
   - SYS
   - SYSTEM
   - SAPDBCTRL
   - TEL_ADMIN
 -----------
 Check: SystemPrivileges
-[!] Please review the following entities (users/roles) because they might have too high privileges:
+Please review the following entities (users/roles) because they might have too high privileges:
 [I] Breakdown per grantee
 ......
 ```
@@ -186,7 +186,7 @@ Using a [configuration file](#configuration-file)
 $ hanalyzer ssh --conf .\conf.yml
 Check: CheckSystemUser
 Check: EncryptionKeySAPHANASecureUserStore
-[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
+Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
 -----------
 ```
 
@@ -194,7 +194,7 @@ Using CLI parameters
 ```bash
 $ hanalyzer ssh --host <hostname/IP_address> --ssh-username <DBUsername>
 Check: EncryptionKeySAPHANASecureUserStore
-[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
+Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.
 ```
 
 Using a public key authentication

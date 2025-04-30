@@ -38,12 +38,12 @@ func EvaluateResults(checkType CheckType) {
 			case "CheckPasswordLifetime": // output: DONE
 				var users []map[string]interface{}
 				if check.checkEmptyResult() {
-					message = "[+] No user found with password lifetime disabled."
+					message = "No user found with password lifetime disabled."
 					check.Out = message
 					check.IssuesPresent = false
 					check.AffectedResources = nil
 				} else {
-					message = "[!] The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n"
+					message = "The following users have password lifetime disabled(IS_PASSWORD_LIFETIME_CHECK_ENABLED=FALSE).\n"
 					for _, r := range check.Results {
 						user := r["USER_NAME"].(string)
 						if (isPredefined(user) && strings.HasPrefix(user, "_SYS_")) || strings.HasPrefix(user, "XSSQLCC_AUTO_USER_") {
@@ -72,7 +72,7 @@ func EvaluateResults(checkType CheckType) {
 						break
 					}
 					privileges := make(map[string][]entity)
-					message = "[!] Found entities (users/roles) that might have too high privileges.\n"
+					message = "Found entities (users/roles) that might have too high privileges.\n"
 					check.Info = "[I] Breakdown per grantee\n"
 					for k, grantee := range grantees {
 						affectedResources = append(affectedResources, struct {
@@ -93,7 +93,7 @@ func EvaluateResults(checkType CheckType) {
 						}
 					}
 					check.AffectedResources = append(check.AffectedResources, affectedResources)
-					check.Out = "[!] Found entities (users/roles) that might have too high privileges.\n"
+					check.Out = "Found entities (users/roles) that might have too high privileges.\n"
 					check.IssuesPresent = true
 
 					check.Info += "[I] Breakdown per privilege\n"
@@ -104,7 +104,7 @@ func EvaluateResults(checkType CheckType) {
 						}
 					}
 				} else {
-					message = "[+] No privilege was found to be reviewed.\n"
+					message = "No privilege was found to be reviewed.\n"
 					check.Out = message
 					check.IssuesPresent = false
 					check.AffectedResources = nil
@@ -131,7 +131,7 @@ func EvaluateResults(checkType CheckType) {
 					}
 				}
 				if len(issues) > 0 {
-					message = "[!] Found users that might have dangerous privileges combinations.\n"
+					message = "Found users that might have dangerous privileges combinations.\n"
 					var printed []string
 					for _, user := range issues {
 						var affectedResource = struct {
@@ -162,7 +162,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
-					message = "[+] No dangerous privilege combinations found.\n"
+					message = "No dangerous privilege combinations found.\n"
 					check.Out = message
 					check.IssuesPresent = false
 					check.AffectedResources = nil
@@ -170,7 +170,7 @@ func EvaluateResults(checkType CheckType) {
 			case "SystemPrivilegeDataAdmin", "SystemPrivilegeDevelopment", "AnalyticPrivilege", "DebugPrivilege": // output: DONE
 				privilege := check.Parameters[0]
 				if len(check.Results) > 0 {
-					message = fmt.Sprintf("[!] Found users/roles that have %s privilege.\n", privilege)
+					message = fmt.Sprintf("Found users/roles that have %s privilege.\n", privilege)
 					grantees, err := check.listGrantees()
 					if err != nil {
 						check.Error = err
@@ -191,14 +191,14 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
-					message = fmt.Sprintf("[+] No user/role has %s privilege.", privilege)
+					message = fmt.Sprintf("No user/role has %s privilege.", privilege)
 					check.Out = message
 					check.IssuesPresent = false
 					check.AffectedResources = nil
 				}
 			case "PredefinedCatalogRoleContentAdmin", "PredefinedCatalogRoleModeling", "PredefinedCatalogRoleSAPSupport", "PredefinedCatalogRepositoryRoles": // output: DONE
 				if len(check.Results) > 0 {
-					message = fmt.Sprintf("[!] Found users/roles that have %s role.\n", check.Parameters[0])
+					message = fmt.Sprintf("Found users/roles that have %s role.\n", check.Parameters[0])
 					grantees := make(map[string]entity)
 					for _, r := range check.Results {
 						user := r["GRANTEE"].(string)
@@ -223,7 +223,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
-					message = fmt.Sprintf("[+] No user/role has %s role.", check.Parameters[0])
+					message = fmt.Sprintf("No user/role has %s role.", check.Parameters[0])
 					check.Out = message
 					check.IssuesPresent = false
 					check.AffectedResources = nil
@@ -236,15 +236,15 @@ func EvaluateResults(checkType CheckType) {
 					break
 				}
 				if len(preCheckClient.Results) == 0 {
-					message = "[!] secure_client_parameter in [authorization] section in global.ini is not set.\n"
+					message = "secure_client_parameter in [authorization] section in global.ini is not set.\n"
 					check.IssuesPresent = true
 				} else {
 					value := preCheckClient.Results[0]["VALUE"].(string)
 					if value == "true" {
-						message += "[+] secure_client_parameter in [authorization] section in global.ini is set to true.\n"
+						message += "secure_client_parameter in [authorization] section in global.ini is set to true.\n"
 						check.IssuesPresent = false
 					} else {
-						message += "[!] secure_client_parameter in [authorization] section in global.ini is set to false.\n"
+						message += "secure_client_parameter in [authorization] section in global.ini is set to false.\n"
 						check.IssuesPresent = true
 					}
 				}
@@ -254,7 +254,7 @@ func EvaluateResults(checkType CheckType) {
 						check.Error = err
 						break
 					}
-					message += "[!] Found entities (users/roles) with the permission to change CLIENT user parameter.\n"
+					message += "Found entities (users/roles) with the permission to change CLIENT user parameter.\n"
 					for _, entity := range grantees {
 						info += fmt.Sprintf("  - %s (type: %s)\n", entity.Name, entity.Type)
 						check.AffectedResources = append(check.AffectedResources, struct {
@@ -270,7 +270,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
-					info += "[+] No user/role can change the CLIENT user parameter."
+					info += "No user/role can change the CLIENT user parameter."
 					check.Out = message
 					check.Info = info
 					check.AffectedResources = nil
@@ -283,20 +283,20 @@ func EvaluateResults(checkType CheckType) {
 					break
 				}
 				if len(preCheckOS.Results) == 0 {
-					message = "[!] file_security in [import_export] section of indexserver.ini not set.\n"
+					message = "file_security in [import_export] section of indexserver.ini not set.\n"
 					check.IssuesPresent = true
 				} else {
 					value := preCheckOS.Results[0]["VALUE"].(string)
 					if value == "medium" || value == "high" {
-						message = fmt.Sprintf("[+] file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
+						message = fmt.Sprintf("file_security set to %s value for import/export in indexserver.ini.\n", strings.ToUpper(value))
 						check.IssuesPresent = false
 					} else {
-						message = "[!] file_security set to LOW value for import/export in indexserver.ini.\n"
+						message = "file_security set to LOW value for import/export in indexserver.ini.\n"
 						check.IssuesPresent = true
 					}
 				}
 				if len(check.Results) > 0 {
-					message += "[!] Found entities (users/roles) that have IMPORT/EXPORT privileges.\n"
+					message += "Found entities (users/roles) that have IMPORT/EXPORT privileges.\n"
 					grantees, err := check.listGrantees()
 					if err != nil {
 						check.Error = err
@@ -317,7 +317,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = message
 					check.IssuesPresent = true
 				} else {
-					message = "[+] No user/role have IMPORT/EXPORT privileges.\n"
+					message = "No user/role have IMPORT/EXPORT privileges.\n"
 					check.Out = message
 					check.IssuesPresent = false
 					check.AffectedResources = nil
@@ -330,10 +330,10 @@ func EvaluateResults(checkType CheckType) {
 					break
 				}
 				if len(check.Results) == 0 || (len(check.Results) > 0 && check.Results[0]["COUNT"].(int64) == 0) {
-					message = "[!] Auditing disabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, is not set or FALSE.\n"
+					message = "Auditing disabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, is not set or FALSE.\n"
 					check.IssuesPresent = true
 				} else {
-					message = fmt.Sprintf("[+] Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %d \n", check.Results[0]["COUNT"].(int64))
+					message = fmt.Sprintf("Auditing enabled. Value of global_auditing_state key, in [audit configuration] section in global.ini file, %d \n", check.Results[0]["COUNT"].(int64))
 					check.IssuesPresent = false
 					if len(preAuditing.Results) > 0 {
 						info = fmt.Sprintf("The total number of auditing policies found is: %d.\n", preAuditing.Results[0]["COUNT"])
@@ -390,10 +390,10 @@ func EvaluateResults(checkType CheckType) {
 					break
 				}
 				if len(check.Results) == 0 && len(preAuditingCSV.Results) == 0 {
-					message = "[!] The audit trail target CSV file (CSVTEXTFILE) is not configured.\n"
+					message = "The audit trail target CSV file (CSVTEXTFILE) is not configured.\n"
 					check.IssuesPresent = true
 				} else {
-					message = "[+] Auditing of CSV files is enabled. The following policies have been detected.\n"
+					message = "Auditing of CSV files is enabled. The following policies have been detected.\n"
 					check.IssuesPresent = false
 					if len(preAuditingCSV.Results) > 0 {
 						for _, r := range preAuditingCSV.Results {
@@ -472,7 +472,7 @@ func EvaluateResults(checkType CheckType) {
 			case "InternalHostnameResolutionSingle": // output: DONE
 				if len(check.Results) == 0 {
 					check.IssuesPresent = true
-					message = "[!] In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.\n"
+					message = "In file global.ini there is no listeninterface key in [communication] section.\nNo default value is known, this could lead to unexpected behavior. It is suggested to double check the global.ini configuration file and set listeninterface key to the appropriate value.\n"
 				} else if len(check.Results) == 1 {
 					v := check.Results[0]["VALUE"].(string)
 					if v == ".local" {
@@ -500,7 +500,7 @@ func EvaluateResults(checkType CheckType) {
 					v := internal.Results[0]["VALUE"].(string)
 					if v == ".internal" {
 						if len(check.Results) > 0 {
-							caveat = "[-] System has multi-host configuration.\n"
+							caveat = "System has multi-host configuration.\n"
 							for _, r := range check.Results {
 								key := r["KEY"].(string)
 								value := r["VALUE"].(string)
@@ -540,7 +540,7 @@ func EvaluateResults(checkType CheckType) {
 					v := pre0.Results[0]["VALUE"].(string)
 					if v == ".global" {
 						if len(pre1.Results) > 0 {
-							message = "[-] Hostnames found.\n"
+							message = "Hostnames found.\n"
 							check.IssuesPresent = true
 							for _, r := range pre1.Results {
 								key := r["KEY"].(string)
@@ -556,14 +556,14 @@ func EvaluateResults(checkType CheckType) {
 							}
 							// Check if there is an allowlist for hostnames that can connect to the server
 							if len(check.Results) == 0 {
-								message += "[!] No restriction found. No allowed_sender in section [system_replication_communication].\n"
+								message += "No restriction found. No allowed_sender in section [system_replication_communication].\n"
 							} else {
 								var allowList []string
 								for _, v := range check.Results {
 									allowList = append(allowList, v["VALUE"].(string))
 								}
 								if len(allowList) == 1 && allowList[0] == "" {
-									message += "[!] No restriction found. No allowed_sender in section [system_replication_communication].\n"
+									message += "No restriction found. No allowed_sender in section [system_replication_communication].\n"
 									break
 								}
 								// Convert allowList to []interface{}
@@ -596,28 +596,28 @@ func EvaluateResults(checkType CheckType) {
 				}
 			case "InstanceSSFSMasterKey": // output: DONE
 				if len(check.Results) == 0 {
-					check.Out = "[!] Instance SSFS Master Key has never been rotated.\n"
+					check.Out = "Instance SSFS Master Key has never been rotated.\n"
 					check.IssuesPresent = true
 				} else {
-					check.Out = fmt.Sprintf("[+] Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					check.Out = fmt.Sprintf("Instance SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 					check.IssuesPresent = false
 				}
 			case "SystemPKISSFSMasterKey": // output: DONE
 				if len(check.Results) == 0 {
-					check.Out = "[!] System PKI SSFS Master Key has never been rotated.\n"
+					check.Out = "System PKI SSFS Master Key has never been rotated.\n"
 					check.IssuesPresent = true
 				} else {
-					check.Out = fmt.Sprintf("[+] System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
+					check.Out = fmt.Sprintf("System PKI SSFS Master Key was last rotation time: %s\n", check.Results[0]["VALUE"])
 					check.IssuesPresent = false
 				}
 			case "PasswordHashMethods": // output: DONE
 				if len(check.Results) == 0 ||
 					(len(check.Results) == 1 &&
 						strings.Contains(strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])), "sha256")) {
-					check.Out = "[!] Legacy and deprecated password storage method in use (SHA256).\n"
+					check.Out = "Legacy and deprecated password storage method in use (SHA256).\n"
 					check.IssuesPresent = true
 				} else if len(check.Results) == 1 && strings.ToUpper(fmt.Sprintf("%s", check.Results[0]["VALUE"])) == "pbkdf2" {
-					check.Out = "[+] All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n"
+					check.Out = "All database user passwords are stored using PBKDF2 (Password-Based Key Derivation Function 2)\n"
 					check.IssuesPresent = false
 				}
 			case "RootEncryptionKeys": // output: DONE
@@ -676,17 +676,17 @@ func EvaluateResults(checkType CheckType) {
 				}
 				if neverRotated {
 					check.IssuesPresent = true
-					message += "[!] There are keys that have never been rotated\n"
+					message += "There are keys that have never been rotated\n"
 					neverRotated = false
 				}
 				if moreThanThreshold {
 					check.IssuesPresent = true
-					message += fmt.Sprintf("[!] There are keys that have been rotated more than %s ago.\n", duration.Literal)
+					message += fmt.Sprintf("There are keys that have been rotated more than %s ago.\n", duration.Literal)
 					moreThanThreshold = false
 				}
 				if lessThanThreshold {
 					check.IssuesPresent = false
-					message += fmt.Sprintf("[+] There are keys rotated less than %s ago.\n", duration.Literal)
+					message += fmt.Sprintf("There are keys rotated less than %s ago.\n", duration.Literal)
 					lessThanThreshold = false
 				}
 				// TOFIX: right now the resources are printed here, before the message is printed
@@ -718,10 +718,10 @@ func EvaluateResults(checkType CheckType) {
 					}
 					if enabled {
 						check.IssuesPresent = false
-						check.Out = fmt.Sprintf("[+] Encryption of %s is active.\n", dict[scope])
+						check.Out = fmt.Sprintf("Encryption of %s is active.\n", dict[scope])
 					} else {
 						check.IssuesPresent = true
-						check.Out = fmt.Sprintf("[!] Encryption of %s is disabled.\n", dict[scope])
+						check.Out = fmt.Sprintf("Encryption of %s is disabled.\n", dict[scope])
 					}
 				}
 			case "TraceFiles": // output: DONE
@@ -738,7 +738,7 @@ func EvaluateResults(checkType CheckType) {
 				out := check.Results
 				if len(pre0.Results) > 0 && len(out) > 0 {
 					check.IssuesPresent = true
-					check.Out = "[!] Trace files found.\n"
+					check.Out = "Trace files found.\n"
 					for _, file := range out {
 						fileSize, ok := file["FILE_SIZE"].(int64)
 						if !ok {
@@ -775,7 +775,7 @@ func EvaluateResults(checkType CheckType) {
 					check.AffectedResources = resourcesAsInterface
 				} else {
 					check.IssuesPresent = false
-					check.Out = "[+] Trace files not found\n"
+					check.Out = "Trace files not found\n"
 				}
 			case "DumpFiles": // output: DONE
 				var affectedResources = []struct {
@@ -784,7 +784,7 @@ func EvaluateResults(checkType CheckType) {
 					FileMTime string `json:"FileMTime"`
 				}{}
 				if len(check.Results) > 0 {
-					message = "[!] Dump files found.\n"
+					message = "Dump files found.\n"
 					check.IssuesPresent = true
 					for _, file := range check.Results {
 						fileSize, ok := file["FILE_SIZE"].(int64)
@@ -822,7 +822,7 @@ func EvaluateResults(checkType CheckType) {
 					check.AffectedResources = resourcesAsInterface
 				} else {
 					check.IssuesPresent = false
-					check.Out = "[+] Dump files not found\n"
+					check.Out = "Dump files not found\n"
 				}
 			case "SAMLBasedAuthN": // output: DONE
 				var affectedResources = []struct {
@@ -833,7 +833,7 @@ func EvaluateResults(checkType CheckType) {
 				}{}
 				if len(check.Results) > 0 {
 					check.IssuesPresent = true
-					check.Out = "[!] Found SAML or SSL certificates.\nPlease review them carefully to avoid authentication issues cross-tenant.\n"
+					check.Out = "Found SAML or SSL certificates.\nPlease review them carefully to avoid authentication issues cross-tenant.\n"
 					for _, cert := range check.Results {
 						certPSEID, ok := cert["PSE_ID"].(string)
 						if !ok {
@@ -883,7 +883,7 @@ func EvaluateResults(checkType CheckType) {
 						check.AffectedResources = resourcesAsInterface
 					}
 				} else {
-					check.Out = "[+] No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n"
+					check.Out = "No SAML or SSL certificates found. Probably authentication is not based on SAML or mTLS\n"
 					check.IssuesPresent = false
 				}
 			case "ConfigurationBlacklist": // output: DONE
@@ -905,7 +905,7 @@ func EvaluateResults(checkType CheckType) {
 				})
 				if len(check.Results) > 0 {
 					check.IssuesPresent = true
-					check.Out = "[!] Configuration blacklist entries found in file multidb.ini.\n"
+					check.Out = "Configuration blacklist entries found in file multidb.ini.\n"
 					check.Caveat = "Please review the configuration blacklist entries.\n"
 					for _, f := range check.Results {
 						ds.AppendValues(
@@ -948,7 +948,7 @@ func EvaluateResults(checkType CheckType) {
 				})
 				if len(check.Results) > 0 {
 					check.IssuesPresent = true
-					check.Out = "[!] Found customizable functionalities.\n"
+					check.Out = "Found customizable functionalities.\n"
 					check.Caveat = "Please review the customizable functionalities.\n"
 					for _, f := range check.Results {
 						name, ok := f["NAME"].(string)
@@ -1040,10 +1040,10 @@ func EvaluateResults(checkType CheckType) {
 				}
 				if strings.Contains(out, "KEY FILE") {
 					check.IssuesPresent = false
-					check.Out = "[+] Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.\n"
+					check.Out = "Encryption key (SSFS_HDB.KEY) found, Secure User Store is correctly encrypted.\n"
 				} else {
 					check.IssuesPresent = true
-					check.Out = "[!] Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n"
+					check.Out = "Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n"
 				}
 			default:
 				logger.Log.Errorf("Unknown check name %s\n", check.Name)

@@ -16,7 +16,7 @@ func (check Check) evaluateCheckSystemUser() {
 		// actual logic
 		if check.Results[0]["USER_DEACTIVATED"] == "TRUE" {
 			message = fmt.Sprintf(
-				"[+] User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
+				"User SYSTEM is DEACTIVATED (USER_DEACTIVATED=%s).\n",
 				check.Results[0]["USER_DEACTIVATED"],
 			)
 			info = fmt.Sprintf(
@@ -28,7 +28,7 @@ func (check Check) evaluateCheckSystemUser() {
 			affectedResources = nil
 		} else {
 			message = fmt.Sprintf(
-				"[!] User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
+				"User SYSTEM is ACTIVE (USER_DEACTIVATED=%s).\n",
 				check.Results[0]["USER_DEACTIVATED"],
 			)
 			info = fmt.Sprintf(
