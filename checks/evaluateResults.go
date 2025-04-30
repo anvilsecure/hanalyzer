@@ -21,7 +21,7 @@ func EvaluateResults(checkType CheckType) {
 		var message, info, caveat string
 		var affectedResources []interface{}
 		if check.Error != nil {
-			logger.Log.Warnf("error during execution of check \"%s\": %s", check.Name, check.Error.Error())
+			logger.Log.Warnf(`error during execution of check "%s": %s`, check.Name, check.Error.Error())
 			continue
 		}
 		if check.Type == QueryType {
