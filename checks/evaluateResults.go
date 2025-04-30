@@ -402,10 +402,10 @@ func EvaluateResults(checkType CheckType) {
 							key := r["KEY"].(string)
 							value := r["VALUE"].(string)
 							configFiles = append(configFiles, struct {
-								FileName string "json:\"FileName\""
-								Section  string "json:\"Section\""
-								Key      string "json:\"Key\""
-								Value    string "json:\"Value\""
+								FileName string `json:"FileName"`
+								Section  string `json:"Section"`
+								Key      string `json:"Key"`
+								Value    string `json:"Value"`
 							}{
 								FileName: fileName,
 								Section:  section,
@@ -428,9 +428,9 @@ func EvaluateResults(checkType CheckType) {
 							userName := r["USER_NAME"].(string)
 							isPolicyActive := isPolicyActiveString == "true"
 							policies = append(policies, struct {
-								PolicyName string "json:\"PolicyName\""
-								Active     bool   "json:\"Active\""
-								UserName   string "json:\"UserName\""
+								PolicyName string `json:"PolicyName"`
+								Active     bool   `json:"Active"`
+								UserName   string `json:"UserName"`
 							}{
 								PolicyName: auditPolicyName,
 								Active:     isPolicyActive,
@@ -661,10 +661,10 @@ func EvaluateResults(checkType CheckType) {
 						}
 					}
 					affectedResources = append(affectedResources, struct {
-						KeyVersions        int64  "json:\"KeyVersions\""
-						KeyType            string "json:\"KeyType\""
-						KeyCreationDate    string "json:\"KeyCreationDate\""
-						KeyLastVersionDate string "json:\"KeyLastVersionDate\""
+						KeyVersions        int64  `json:"KeyVersions"`
+						KeyType            string `json:"KeyType"`
+						KeyCreationDate    string `json:"KeyCreationDate"`
+						KeyLastVersionDate string `json:"KeyLastVersionDate"`
 						Threshold          string `json:"Threshold"`
 					}{
 						KeyVersions:        keyVersions,
@@ -689,16 +689,6 @@ func EvaluateResults(checkType CheckType) {
 					message += fmt.Sprintf("There are keys rotated less than %s ago.\n", duration.Literal)
 					lessThanThreshold = false
 				}
-				// TOFIX: right now the resources are printed here, before the message is printed
-				// in fact, the message will be printed after the switch at line 873/878
-				/* 				for _, key := range affectedResources {
-					utils.Info(
-						"- Key type: %s\n\t- Creation date: %s\n\t- Last version date: %s\n",
-						key.KeyType,
-						key.KeyCreationDate,
-						key.KeyLastVersionDate,
-					)
-				} */
 				check.Out = message
 				check.AffectedResources = GenericSliceToInterfaceSlice(affectedResources)
 			case "DataAndLogVolumeEncryption": // output: DONE
@@ -753,9 +743,9 @@ func EvaluateResults(checkType CheckType) {
 							logger.Log.Errorf("Error during assertion of fileName '%s' to string", file["FILE_NAME"])
 						}
 						affectedResources = append(affectedResources, struct {
-							FileName  string "json:\"FileName\""
-							FileSize  int64  "json:\"FileSize\""
-							FileMTime string "json:\"FileMTime\""
+							FileName  string `json:"FileName"`
+							FileSize  int64  `json:"FileSize"`
+							FileMTime string `json:"FileMTime"`
 						}{
 							FileName:  fileName,
 							FileSize:  fileSize,
@@ -800,9 +790,9 @@ func EvaluateResults(checkType CheckType) {
 							logger.Log.Errorf("Error during assertion of fileName '%s' to string", file["FILE_NAME"])
 						}
 						affectedResources = append(affectedResources, struct {
-							FileName  string "json:\"FileName\""
-							FileSize  int64  "json:\"FileSize\""
-							FileMTime string "json:\"FileMTime\""
+							FileName  string `json:"FileName"`
+							FileSize  int64  `json:"FileSize"`
+							FileMTime string `json:"FileMTime"`
 						}{
 							FileName:  fileName,
 							FileSize:  fileSize,
@@ -852,10 +842,10 @@ func EvaluateResults(checkType CheckType) {
 							logger.Log.Errorf("Error during assertion of certOwnerName '%s' to string", cert["OWNER_NAME"])
 						}
 						affectedResources = append(affectedResources, struct {
-							CertPSEID     string "json:\"CertPSEID\""
-							CertName      string "json:\"CertName\""
-							CertPurpose   string "json:\"CertPurpose\""
-							CertOwnerName string "json:\"CertOwnerName\""
+							CertPSEID     string `json:"CertPSEID"`
+							CertName      string `json:"CertName"`
+							CertPurpose   string `json:"CertPurpose"`
+							CertOwnerName string `json:"CertOwnerName"`
 						}{
 							CertPSEID:     certPSEID,
 							CertName:      certName,
@@ -972,9 +962,9 @@ func EvaluateResults(checkType CheckType) {
 							isEnabledString,
 						)
 						affectedResources = append(affectedResources, struct {
-							Name        string "json:\"NAME\""
-							Description string "json:\"DESCRIPTION\""
-							Enabled     bool   "json:\"IS_ENABLED\""
+							Name        string `json:"NAME"`
+							Description string `json:"DESCRIPTION"`
+							Enabled     bool   `json:"IS_ENABLED"`
 						}{
 							Name:        name,
 							Description: description,
