@@ -2,7 +2,6 @@ package checks
 
 import (
 	"encoding/json"
-	"hana/config"
 	"hana/logger"
 	"hana/utils"
 	"io"
@@ -27,10 +26,10 @@ func CollectOutput(outputFile string, checkType string) {
 	if checkType == "query" {
 		scanDetails = ScanDetails{
 			ScanType:       checkType,
-			ServerIP:       config.Conf.Host,
-			ServerPort:     config.Conf.Database.Port,
-			Sid:            config.Conf.SID,
-			UserName:       config.Conf.Database.Username,
+			ServerIP:       cfg.Host,
+			ServerPort:     cfg.Database.Port,
+			Sid:            cfg.SID,
+			UserName:       cfg.Database.Username,
 			ExecutedChecks: []string{},
 			SkippedChecks:  []string{},
 			UUID:           scanUUID,
@@ -39,10 +38,10 @@ func CollectOutput(outputFile string, checkType string) {
 	} else if checkType == "ssh" {
 		scanDetails = ScanDetails{
 			ScanType:       checkType,
-			ServerIP:       config.Conf.Host,
-			ServerPort:     config.Conf.SSH.Port,
+			ServerIP:       cfg.Host,
+			ServerPort:     cfg.SSH.Port,
 			Sid:            "",
-			UserName:       config.Conf.SSH.Username,
+			UserName:       cfg.SSH.Username,
 			ExecutedChecks: []string{},
 			SkippedChecks:  []string{},
 			UUID:           scanUUID,

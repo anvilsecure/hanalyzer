@@ -21,7 +21,7 @@ type Database struct {
 type Results []map[string]interface{}
 
 var (
-	host         string = config.Conf.Host
+	host         string = cfg.Host
 	dbConfig     config.DBConfig
 	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
 	hdbDsn       string
@@ -36,7 +36,7 @@ const (
 )
 
 func validateDBConfiguration() error {
-	conf := config.Conf
+	conf := cfg
 	if conf.Host == "" {
 		return fmt.Errorf("empty host provided for DB connection")
 	}
