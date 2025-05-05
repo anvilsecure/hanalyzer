@@ -19,7 +19,7 @@ var queryCmd = &cobra.Command{
 	Use:   "query",
 	Short: "Perform checks by querying the DB.",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg := config.InitConfig()
+		cfg := config.Get()
 
 		// ----------------------------------
 		//      prepare output folder
@@ -41,11 +41,7 @@ var queryCmd = &cobra.Command{
 		}
 
 		if configFile != "" {
-			cfg := config.LoadFromFile(configFile)
-			if err != nil {
-				logger.Log.Errorf("Error during configuration loading: %s\n", err.Error())
-				os.Exit(1)
-			}
+			cfg = config.LoadFromFile(configFile)
 		} else {
 			dbPassword = os.Getenv("HANA_DB_PASSWORD")
 			if dbPassword == "" {

@@ -2,6 +2,7 @@ package checks
 
 import (
 	"encoding/json"
+	"hana/config"
 	"hana/logger"
 	"hana/utils"
 	"io"
@@ -18,6 +19,8 @@ func CollectOutput(outputFile string, checkType string) {
 	var scanDetails ScanDetails
 	scanUUID := uuid.New()
 	timestamp := time.Now().Format(logTimeFormat)
+
+	cfg := config.Get()
 
 	exists, empty, err := utils.FileExistsAndNotEmpty(outputFile)
 	if err != nil {

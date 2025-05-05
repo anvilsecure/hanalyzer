@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"bytes"
+	"hana/config"
 	"hana/logger"
 	"net"
 	"os"
@@ -28,6 +29,8 @@ type SSHCreds struct {
 
 func Config() {
 	var sshConfig *ssh.ClientConfig
+	cfg := config.Get()
+
 	sshCreds.Username = cfg.SSH.Username
 	if cfg.SSH.PrivateKey != "" {
 		key, err := os.ReadFile(cfg.SSH.PrivateKey)

@@ -22,7 +22,7 @@ var sshCmd = &cobra.Command{
 		// ----------------------------------
 		//      prepare output folder
 		// ----------------------------------
-		cfg := config.InitConfig()
+		cfg := config.Get()
 
 		outputPath, err := utils.PrepareOutputFolder(outputFolder)
 		if err != nil {

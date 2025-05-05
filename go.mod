@@ -14,6 +14,7 @@ require (
 	github.com/bndr/gotabulate v1.1.2 // indirect
 	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
+	github.com/goccy/go-yaml v1.17.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

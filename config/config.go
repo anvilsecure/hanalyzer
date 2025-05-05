@@ -1,12 +1,12 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 )
 
 var (
@@ -16,13 +16,13 @@ var (
 
 // DatabaseConfig struct to hold database configuration data
 type Config struct {
-	Host     string    `yaml:"host"`
-	SID      string    `yaml:"sid"`
+	Host     string    `yaml:"host" validate:"required"`
+	SID      string    `yaml:"sid" validate:"required"`
 	Database DBConfig  `yaml:"database"`
 	SSH      SSHConfig `yaml:"ssh"`
 }
 
-func InitConfig() *Config {
+func Get() *Config {
 	once.Do(func() {
 		// a sane default configuration
 		instance = Config{
@@ -34,33 +34,37 @@ func InitConfig() *Config {
 				Password: "password",
 			},
 			SSH: SSHConfig{
-				Port:          22,
-				Username:      "root",
-				Password:      "password",
-				IgnoreHostKey: true,
+				Port:               22,
+				Username:           "root",
+				Password:           "password",
+				PrivateKey:         "",
+				PrivateKeyPassword: "",
+				IgnoreHostKey:      true,
 			},
 		}
 	})
+
+	return &instance
 }
 
 // LoadConfig reads and parses conf.yml file
 func LoadFromFile(configFile string) *Config {
 	// Check if the file exists
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		log.Printf("config file does not exist: %s", configFile)
+		slog.Error("config file does not exist", "config", configFile)
 		return &instance
 	}
 
 	// Read config.yml file
 	data, err := os.ReadFile(configFile)
 	if err != nil {
-		log.Printf("error reading config file: %v", err)
+		slog.Error("error reading config file", "error", err.Error())
 		return &instance
 	}
 
 	// Parse YAML data into DatabaseConfig struct
 	if err := yaml.Unmarshal(data, &instance); err != nil {
-		log.Printf("error parsing config file: %v", err)
+		slog.Error("error parsing config file", "error", err.Error())
 		return &instance
 	}
 
