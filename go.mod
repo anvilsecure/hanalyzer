@@ -5,6 +5,7 @@ go 1.24.1
 require (
 	github.com/SAP/go-hdb v1.13.5
 	github.com/fatih/color v1.18.0
+	github.com/goccy/go-yaml v1.17.1
 	github.com/spf13/cobra v1.9.1
 )
 
@@ -14,7 +15,6 @@ require (
 	github.com/bndr/gotabulate v1.1.2 // indirect
 	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/goccy/go-yaml v1.17.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -33,5 +33,5 @@ require (
 	golang.org/x/term v0.31.0
 	golang.org/x/text v0.24.0 // indirect
 	gopkg.in/agrison/go-tablib.v1 v1.0.0-20160308103503-aa8e7a088a68
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
