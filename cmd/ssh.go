@@ -9,6 +9,7 @@ import (
 	"hana/ssh"
 	"hana/utils"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -29,13 +30,13 @@ var sshCmd = &cobra.Command{
 			log.Fatalf("error while preparing output folder: %s\n", err.Error())
 		}
 
-		logger.Log = logger.NewLogger(outputPath)
-		jsonOutput = filepath.Join(logger.Log.OutputFolder, outputFileName)
+		logger.SetOutput(outputPath)
+		jsonOutput = filepath.Join(outputPath, outputFileName)
 		// ----------------------------------
 		checkType := checks.SSHType
 
 		if err := validateSSHFlags(); err != nil {
-			logger.Log.Error(err.Error())
+			slog.Error("error during validation of SSH flags", "error", err.Error())
 			cmd.Help()
 			os.Exit(1)
 		}
@@ -52,8 +53,8 @@ var sshCmd = &cobra.Command{
 			// if SSH PASSWORD is empty and also the password for the priv key
 			// then exit, otherwise one of them is used
 			if sshPassword == "" && sshPrivKey == "" {
-				logger.Log.Error("Environment variable HANA_SSH_PASSWORD is empty or not set and no private key was provided.")
-				logger.Log.Info("Either provide a private key or set the environment variable HANA_SSH_PASSWORD by setting it:\nexport HANA_SSH_PASSWORD=myverysecretpassword")
+				slog.Error("Environment variable HANA_SSH_PASSWORD is empty or not set and no private key was provided.")
+				slog.Info("Either provide a private key or set the environment variable HANA_SSH_PASSWORD by setting it:\nexport HANA_SSH_PASSWORD=myverysecretpassword")
 				os.Exit(1)
 			}
 
@@ -83,14 +84,13 @@ var sshCmd = &cobra.Command{
 
 		for _, check := range checks.CheckList {
 			if check.Error != nil {
-				logger.Log.Warnf("error occurred to check \"%s\": %s\n", check.Name, check.Error.Error())
+				slog.Warn("error occurred to check", "name", check.Name, "error", check.Error.Error())
 				checks.SkippedChecks = append(checks.SkippedChecks, check)
 			}
 		}
 
 		checks.CollectOutput(jsonOutput, checkType.String())
 		presentation.Render(utils.OutputPath)
-		logger.Log.CloseFile()
 	},
 }
 

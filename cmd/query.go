@@ -9,6 +9,7 @@ import (
 	"hana/presentation"
 	"hana/utils"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -29,13 +30,13 @@ var queryCmd = &cobra.Command{
 			log.Fatalf("error while preparing output folder: %s\n", err.Error())
 		}
 
-		logger.Log = logger.NewLogger(outputPath)
-		jsonOutput = filepath.Join(logger.Log.OutputFolder, outputFileName)
+		logger.SetOutput(outputPath)
+		jsonOutput = filepath.Join(outputFolder, outputFileName)
 
 		// ----------------------------------
 		checkType := checks.QueryType
 		if err := validateDBFlags(); err != nil {
-			logger.Log.Error(err.Error())
+			slog.Error(err.Error())
 			cmd.Help()
 			os.Exit(1)
 		}
@@ -45,8 +46,8 @@ var queryCmd = &cobra.Command{
 		} else {
 			dbPassword = os.Getenv("HANA_DB_PASSWORD")
 			if dbPassword == "" {
-				logger.Log.Error("Environment variable HANA_DB_PASSWORD is empty or not set.")
-				logger.Log.Info("Please provide the DB password by setting it:\nexport HANA_DB_PASSWORD=myverysecretpassword")
+				slog.Error("Environment variable HANA_DB_PASSWORD is empty or not set.")
+				slog.Info("Please provide the DB password by setting it:\nexport HANA_DB_PASSWORD=myverysecretpassword")
 				os.Exit(1)
 			}
 			cfg.Host = host
@@ -64,14 +65,13 @@ var queryCmd = &cobra.Command{
 
 		for _, check := range checks.CheckList {
 			if check.Error != nil {
-				logger.Log.Warnf("error occurred to check \"%s\": %s\n", check.Name, check.Error.Error())
+				slog.Warn("error occurred to check", "name", check.Name, "error", check.Error.Error())
 				checks.SkippedChecks = append(checks.SkippedChecks, check)
 			}
 		}
 
 		checks.CollectOutput(jsonOutput, checkType.String())
 		presentation.Render(utils.OutputPath)
-		logger.Log.CloseFile()
 	},
 }
 

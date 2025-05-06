@@ -3,9 +3,9 @@ package checks
 import (
 	"encoding/json"
 	"hana/config"
-	"hana/logger"
 	"hana/utils"
 	"io"
+	"log/slog"
 	"os"
 	"time"
 
@@ -24,7 +24,7 @@ func CollectOutput(outputFile string, checkType string) {
 
 	exists, empty, err := utils.FileExistsAndNotEmpty(outputFile)
 	if err != nil {
-		logger.Log.Errorf("Error while checking file '%s' existence: %s\n", outputFile, err.Error())
+		slog.Error("Error while checking file existence", "file", outputFile, "error", err.Error())
 	}
 	if checkType == "query" {
 		scanDetails = ScanDetails{
@@ -95,14 +95,14 @@ func CollectOutput(outputFile string, checkType string) {
 		}
 		jsonData, err = json.MarshalIndent(Out, "", "  ")
 		if err != nil {
-			logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
+			slog.Error("Error marshalling to JSON", "error", err.Error())
 			return
 		}
 	} else if exists && !empty {
 		var PreviousOut *Output
 		file, err := os.Open(outputFile)
 		if err != nil {
-			logger.Log.Errorf("Error opening existing JSON output file '%s': %s", outputFile, err.Error())
+			slog.Error("Error opening existing JSON output file", "file", outputFile, "error", err.Error())
 			return
 		}
 		defer file.Close()
@@ -110,7 +110,7 @@ func CollectOutput(outputFile string, checkType string) {
 		byteValue, _ := io.ReadAll(file)
 		err = json.Unmarshal(byteValue, &PreviousOut)
 		if err != nil {
-			logger.Log.Errorf("error during JSON unmarshalling of the previous results: %s\n", err.Error())
+			slog.Error("error during JSON unmarshalling of the previous results", "error", err.Error())
 		}
 		PreviousOut.ScansDetails = append(PreviousOut.ScansDetails, scanDetails)
 		for _, check := range CheckList {
@@ -157,12 +157,12 @@ func CollectOutput(outputFile string, checkType string) {
 		}
 		jsonData, err = json.MarshalIndent(PreviousOut, "", "  ")
 		if err != nil {
-			logger.Log.Errorf("Error marshalling to JSON: %s", err.Error())
+			slog.Error("Error marshalling to JSON", "error", err.Error())
 			return
 		}
 	}
-	logger.Log.Infof("Writing output data to file: %s", outputFile)
+	slog.Info("Writing output data to file", "file", outputFile)
 	if err := os.WriteFile(outputFile, jsonData, 0666); err != nil {
-		logger.Log.Errorf("Error while writing output to '%s': %s\n", outputFile, err.Error())
+		slog.Error("Error while writing output to destination", "destination", outputFile, "error", err.Error())
 	}
 }

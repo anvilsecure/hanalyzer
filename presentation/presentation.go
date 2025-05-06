@@ -4,9 +4,9 @@ import (
 	"embed"
 	"encoding/json"
 	"hana/checks"
-	"hana/logger"
 	"html/template"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -18,7 +18,7 @@ func Render(path string) {
 	// open JSON output file
 	file, err := os.Open(filepath.Join(path, outputFileName))
 	if err != nil {
-		logger.Log.Errorf("Error opening existing JSON output file '%s': %s", outputFileName, err.Error())
+		slog.Error("Error opening existing JSON output file", "file", outputFileName, "error", err.Error())
 		return
 	}
 	defer file.Close()
@@ -39,14 +39,14 @@ func Render(path string) {
 		"generateRandomID":  generateRandomID,
 	}).ParseFS(tmplFile, "static/template.html")
 	if err != nil {
-		logger.Log.Error(err.Error())
+		slog.Error("an error occurred duing the parsing of the template", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Create an HTML file
 	fileOut, err := os.Create(filepath.Join(path, "output.html"))
 	if err != nil {
-		logger.Log.Error(err.Error())
+		slog.Error("an error occurred during the creation of output.html", "error", err.Error())
 		os.Exit(1)
 	}
 	defer fileOut.Close()
@@ -77,5 +77,5 @@ func Render(path string) {
 		panic(err)
 	}
 
-	logger.Log.Infof("HTML file generated successfully: %s\n", filepath.Join(path, "output.html"))
+	slog.Info("HTML file generated successfully", "file", filepath.Join(path, "output.html"))
 }

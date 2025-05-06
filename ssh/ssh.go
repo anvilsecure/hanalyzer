@@ -3,7 +3,7 @@ package ssh
 import (
 	"bytes"
 	"hana/config"
-	"hana/logger"
+	"log/slog"
 	"net"
 	"os"
 	"path"
@@ -35,13 +35,13 @@ func Config() {
 	if cfg.SSH.PrivateKey != "" {
 		key, err := os.ReadFile(cfg.SSH.PrivateKey)
 		if err != nil {
-			logger.Log.Errorf("[SSH]Unable to read private key '%s': %s", cfg.SSH.PrivateKey, err.Error())
+			slog.Error("Unable to read private key", "cmd", "SSH", "privateKey", cfg.SSH.PrivateKey, "error", err.Error())
 			os.Exit(1)
 		}
 		// Create the Signer for this private key.
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
-			logger.Log.Errorf("[SSH]Unable to parse private key '%s': %s", cfg.SSH.PrivateKey, err.Error())
+			slog.Error("Unable to parse private key", "cmd", "SSH", "privateKey", cfg.SSH.PrivateKey, "error", err.Error())
 			os.Exit(1)
 		}
 		sshCreds.PrivKey = signer
@@ -62,7 +62,7 @@ func Config() {
 			knownhostsFile := path.Join(os.Getenv("HOME"), "/.ssh/known_hosts")
 			hostkeyCallback, err := knownhosts.New(knownhostsFile)
 			if err != nil {
-				logger.Log.Errorf("Error while reading '%s' file: %s", knownhostsFile, err.Error())
+				slog.Error("Error while reading file", "cmd", "SSH", "knownHostsFile", knownhostsFile, "error", err.Error())
 				os.Exit(1)
 			}
 			sshConfig.HostKeyCallback = hostkeyCallback
@@ -75,7 +75,7 @@ func Config() {
 	sshHost := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.SSH.Port))
 	SSHClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		logger.Log.Errorf("[ssh]Error during authentication process: %s", err.Error())
+		slog.Error("Error during authentication process", "cmd", "SSH", "error", err.Error())
 		os.Exit(1)
 	}
 	sshCreds.Password = ""
