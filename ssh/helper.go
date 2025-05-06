@@ -2,7 +2,7 @@ package ssh
 
 import (
 	"fmt"
-	"hana/logger"
+	"log/slog"
 	"os"
 	"syscall"
 
@@ -17,7 +17,7 @@ func askForCredentials() {
 	fmt.Print("Enter password: ")
 	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
-		logger.Log.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 	password := string(bytePassword)

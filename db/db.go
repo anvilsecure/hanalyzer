@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"hana/config"
-	"hana/logger"
 	"os"
 	"time"
+
+	"log/slog"
 
 	"github.com/theckman/yacspin"
 
@@ -21,7 +22,7 @@ type Database struct {
 type Results []map[string]interface{}
 
 var (
-	host         string = config.Conf.Host
+	host         string
 	dbConfig     config.DBConfig
 	hdbDsnFormat string = "hdb://%s:%s@%s:%d"
 	hdbDsn       string
@@ -36,31 +37,37 @@ const (
 )
 
 func validateDBConfiguration() error {
-	conf := config.Conf
+	conf := config.Get()
 	if conf.Host == "" {
 		return fmt.Errorf("empty host provided for DB connection")
 	}
+
 	if conf.SID == "" {
 		return fmt.Errorf("empty DB SID provided for DB connection")
 	}
+
 	dbConfig = conf.Database
 	if dbConfig.Username == "" {
 		return fmt.Errorf("empty username provided for DB connection")
 	}
+
 	if dbConfig.Password == "" {
 		return fmt.Errorf("empty password provided for DB connection")
 	}
+
 	host = conf.Host
 	username = dbConfig.Username
 	password = dbConfig.Password
+
 	return nil
 }
 
 func Config() {
 	if err := validateDBConfiguration(); err != nil {
-		logger.Log.Errorf("configuration validation error: %s\n", err.Error())
+		slog.Error("configuration validation error: %s\n", err.Error())
 		os.Exit(1)
 	}
+
 	hdbDsn = fmt.Sprintf(
 		hdbDsnFormat,
 		username,
@@ -68,6 +75,7 @@ func Config() {
 		host,
 		dbConfig.Port,
 	)
+
 	cfg := yacspin.Config{
 		Frequency:         100 * time.Millisecond,
 		CharSet:           yacspin.CharSets[78],
@@ -81,24 +89,27 @@ func Config() {
 
 	spinner, err := yacspin.New(cfg)
 	if err != nil {
-		logger.Log.Error(err.Error())
+		slog.Error(err.Error())
 	}
+
 	if err = spinner.Start(); err != nil {
-		logger.Log.Error(err.Error())
+		slog.Error(err.Error())
 	}
+
 	if err := connect(); err != nil {
 		if spinnerErr := spinner.StopFail(); spinnerErr != nil {
-			logger.Log.Error(spinnerErr.Error())
+			slog.Error(spinnerErr.Error())
 			os.Exit(1)
 		}
-		logger.Log.Error(err.Error())
-		logger.Log.CloseFile()
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
+
 	if err = spinner.Stop(); err != nil {
-		logger.Log.Error(err.Error())
+		slog.Error(err.Error())
 	}
-	logger.Log.Infof("Connection successful to %s:%d", host, dbConfig.Port)
+
+	slog.Info("Connection successful to %s:%d", host, dbConfig.Port)
 }
 
 func connect() error {

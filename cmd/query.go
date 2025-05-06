@@ -9,6 +9,7 @@ import (
 	"hana/presentation"
 	"hana/utils"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -19,6 +20,8 @@ var queryCmd = &cobra.Command{
 	Use:   "query",
 	Short: "Perform checks by querying the DB.",
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := config.Get()
+
 		// ----------------------------------
 		//      prepare output folder
 		// ----------------------------------
@@ -26,33 +29,32 @@ var queryCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("error while preparing output folder: %s\n", err.Error())
 		}
-		logger.Log = logger.NewLogger(outputPath)
-		jsonOutput = filepath.Join(logger.Log.OutputFolder, outputFileName)
+
+		logger.SetOutput(outputPath)
+		jsonOutput = filepath.Join(outputFolder, outputFileName)
+
 		// ----------------------------------
 		checkType := checks.QueryType
 		if err := validateDBFlags(); err != nil {
-			logger.Log.Error(err.Error())
+			slog.Error(err.Error())
 			cmd.Help()
 			os.Exit(1)
 		}
+
 		if configFile != "" {
-			err := config.LoadConfig(configFile)
-			if err != nil {
-				logger.Log.Errorf("Error during configuration loading: %s\n", err.Error())
-				os.Exit(1)
-			}
+			cfg = config.LoadFromFile(configFile)
 		} else {
 			dbPassword = os.Getenv("HANA_DB_PASSWORD")
 			if dbPassword == "" {
-				logger.Log.Error("Environment variable HANA_DB_PASSWORD is empty or not set.")
-				logger.Log.Info("Please provide the DB password by setting it:\nexport HANA_DB_PASSWORD=myverysecretpassword")
+				slog.Error("Environment variable HANA_DB_PASSWORD is empty or not set.")
+				slog.Info("Please provide the DB password by setting it:\nexport HANA_DB_PASSWORD=myverysecretpassword")
 				os.Exit(1)
 			}
-			config.Conf.Host = host
-			config.Conf.SID = SID
-			config.Conf.Database.Port = dbPort
-			config.Conf.Database.Username = dbUsername
-			config.Conf.Database.Password = dbPassword
+			cfg.Host = host
+			cfg.SID = SID
+			cfg.Database.Port = dbPort
+			cfg.Database.Username = dbUsername
+			cfg.Database.Password = dbPassword
 		}
 
 		db.Config()
@@ -60,15 +62,16 @@ var queryCmd = &cobra.Command{
 		checks.CreateChecks(checkType)
 		checks.ExecuteChecks(checkType)
 		checks.EvaluateResults(checkType)
+
 		for _, check := range checks.CheckList {
 			if check.Error != nil {
-				logger.Log.Warnf("error occurred to check \"%s\": %s\n", check.Name, check.Error.Error())
+				slog.Warn("error occurred to check", "name", check.Name, "error", check.Error.Error())
 				checks.SkippedChecks = append(checks.SkippedChecks, check)
 			}
 		}
+
 		checks.CollectOutput(jsonOutput, checkType.String())
 		presentation.Render(utils.OutputPath)
-		logger.Log.CloseFile()
 	},
 }
 
@@ -78,17 +81,21 @@ func validateDBFlags() error {
 		dbUsername != "") {
 		return fmt.Errorf("error: You cannot use -conf with other CLI flags")
 	}
+
 	if configFile == "" {
 		if host == "" {
 			return fmt.Errorf("error: -host required when not using -conf")
 		}
+
 		if SID == "" {
 			return fmt.Errorf("error: -sid required when not using -conf")
 		}
+
 		if dbUsername == "" {
 			return fmt.Errorf("error: username required when not using -conf")
 		}
 	}
+
 	return nil
 }
 

@@ -3,7 +3,7 @@ package ssh
 import (
 	"bytes"
 	"hana/config"
-	"hana/logger"
+	"log/slog"
 	"net"
 	"os"
 	"path"
@@ -29,23 +29,25 @@ type SSHCreds struct {
 
 func Config() {
 	var sshConfig *ssh.ClientConfig
-	sshCreds.Username = config.Conf.SSH.Username
-	if config.Conf.SSH.PrivateKey != "" {
-		key, err := os.ReadFile(config.Conf.SSH.PrivateKey)
+	cfg := config.Get()
+
+	sshCreds.Username = cfg.SSH.Username
+	if cfg.SSH.PrivateKey != "" {
+		key, err := os.ReadFile(cfg.SSH.PrivateKey)
 		if err != nil {
-			logger.Log.Errorf("[SSH]Unable to read private key '%s': %s", config.Conf.SSH.PrivateKey, err.Error())
+			slog.Error("Unable to read private key", "cmd", "SSH", "privateKey", cfg.SSH.PrivateKey, "error", err.Error())
 			os.Exit(1)
 		}
 		// Create the Signer for this private key.
 		signer, err := ssh.ParsePrivateKey(key)
 		if err != nil {
-			logger.Log.Errorf("[SSH]Unable to parse private key '%s': %s", config.Conf.SSH.PrivateKey, err.Error())
+			slog.Error("Unable to parse private key", "cmd", "SSH", "privateKey", cfg.SSH.PrivateKey, "error", err.Error())
 			os.Exit(1)
 		}
 		sshCreds.PrivKey = signer
 		AuthMethods = append(AuthMethods, ssh.PublicKeys(sshCreds.PrivKey))
-	} else if config.Conf.SSH.Password != "" {
-		sshCreds.Password = config.Conf.SSH.Password
+	} else if cfg.SSH.Password != "" {
+		sshCreds.Password = cfg.SSH.Password
 		AuthMethods = append(AuthMethods, ssh.Password(sshCreds.Password))
 	}
 	if sshCreds.Username != "" {
@@ -54,13 +56,13 @@ func Config() {
 			User: sshCreds.Username,
 			Auth: AuthMethods,
 		}
-		if config.Conf.SSH.IgnoreHostKey {
+		if cfg.SSH.IgnoreHostKey {
 			sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 		} else {
 			knownhostsFile := path.Join(os.Getenv("HOME"), "/.ssh/known_hosts")
 			hostkeyCallback, err := knownhosts.New(knownhostsFile)
 			if err != nil {
-				logger.Log.Errorf("Error while reading '%s' file: %s", knownhostsFile, err.Error())
+				slog.Error("Error while reading file", "cmd", "SSH", "knownHostsFile", knownhostsFile, "error", err.Error())
 				os.Exit(1)
 			}
 			sshConfig.HostKeyCallback = hostkeyCallback
@@ -70,10 +72,10 @@ func Config() {
 	}
 
 	var err error
-	sshHost := net.JoinHostPort(config.Conf.Host, strconv.Itoa(config.Conf.SSH.Port))
+	sshHost := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.SSH.Port))
 	SSHClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		logger.Log.Errorf("[ssh]Error during authentication process: %s", err.Error())
+		slog.Error("Error during authentication process", "cmd", "SSH", "error", err.Error())
 		os.Exit(1)
 	}
 	sshCreds.Password = ""

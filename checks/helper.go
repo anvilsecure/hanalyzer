@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"hana/db"
-	"hana/logger"
 	"hana/ssh"
 	"log"
+	"log/slog"
 	"reflect"
 	"strings"
 	"time"
@@ -223,7 +223,7 @@ func getCheckByName(name string) (*Check, error) {
 // checkEmptyResult function checks if the result set of the executed Check is empty or not
 func (check *Check) checkEmptyResult() bool {
 	if len(check.Results) == 0 {
-		logger.Log.Warnf("%s check returned empty result set\n", check.Name)
+		slog.Warn("check returned empty result set", "name", check.Name)
 		return true
 	}
 	return false

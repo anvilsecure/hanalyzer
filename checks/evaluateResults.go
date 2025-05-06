@@ -3,8 +3,8 @@ package checks
 import (
 	"encoding/json"
 	"fmt"
-	"hana/logger"
 	"hana/utils"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -21,7 +21,7 @@ func EvaluateResults(checkType CheckType) {
 		var message, info, caveat string
 		var affectedResources []interface{}
 		if check.Error != nil {
-			logger.Log.Warnf(`error during execution of check "%s": %s`, check.Name, check.Error.Error())
+			slog.Warn(`error during execution of a check`, "checkName", check.Name, "error", check.Error.Error())
 			continue
 		}
 		if check.Type == QueryType {
@@ -230,7 +230,7 @@ func EvaluateResults(checkType CheckType) {
 			case "UserParameterClient": // output: DONE
 				preCheckClient, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					check.Error = err
 					break
 				}
@@ -277,7 +277,7 @@ func EvaluateResults(checkType CheckType) {
 			case "OSFSPermissions": // output: DONE
 				preCheckOS, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					check.Error = err
 					break
 				}
@@ -325,7 +325,7 @@ func EvaluateResults(checkType CheckType) {
 			case "Auditing": // output: DONE
 				preAuditing, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					break
 				}
 				if len(check.Results) == 0 || (len(check.Results) > 0 && check.Results[0]["COUNT"].(int64) == 0) {
@@ -385,7 +385,7 @@ func EvaluateResults(checkType CheckType) {
 				}{}
 				preAuditingCSV, err := getCheckByName(fmt.Sprintf("_pre_%s", check.Name))
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					break
 				}
 				if len(check.Results) == 0 && len(preAuditingCSV.Results) == 0 {
@@ -492,7 +492,7 @@ func EvaluateResults(checkType CheckType) {
 			case "InternalHostnameResolutionMultiple": // output: DONE
 				internal, err := getCheckByName("InternalHostnameResolutionSingle")
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					break
 				}
 				if len(internal.Results) == 1 {
@@ -527,12 +527,12 @@ func EvaluateResults(checkType CheckType) {
 			case "HostnameResolutionReplication": // output: DONE
 				pre0, err := getCheckByName("_pre_0_HostnameResolutionReplication")
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					break
 				}
 				pre1, err := getCheckByName("_pre_1_HostnameResolutionReplication")
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					break
 				}
 				if len(pre0.Results) == 1 {
@@ -641,11 +641,11 @@ func EvaluateResults(checkType CheckType) {
 					layout := "2006-01-02 15:04:05"
 					keyCreationDate, err := time.Parse(layout, keyCreationDateString)
 					if err != nil {
-						logger.Log.Error(err.Error())
+						slog.Error(err.Error())
 					}
 					keyLastVersionDate, _ := time.Parse(layout, keyLastVersionDateString)
 					if err != nil {
-						logger.Log.Error(err.Error())
+						slog.Error(err.Error())
 					}
 					if keyVersions == 1 {
 						neverRotated = true
@@ -699,11 +699,11 @@ func EvaluateResults(checkType CheckType) {
 				for _, record := range check.Results {
 					scope, ok := record["SCOPE"].(string)
 					if !ok {
-						logger.Log.Errorf("Type assertion of %s failed.\n", record["SCOPE"])
+						slog.Error("Type assertion failed.", "scope", record["SCOPE"])
 					}
 					enabled := strings.ToLower(record["IS_ENCRYPTION_ACTIVE"].(string)) == "true"
 					if !ok {
-						logger.Log.Errorf("Type assertion of %s failed.\n", record["IS_ENCRYPTION_ACTIVE"])
+						slog.Error("Type assertion failed", "isEncryptionActive", record["IS_ENCRYPTION_ACTIVE"])
 					}
 					if enabled {
 						check.IssuesPresent = false
@@ -721,7 +721,7 @@ func EvaluateResults(checkType CheckType) {
 				}{}
 				pre0, err := getCheckByName("_pre_0_TraceFiles")
 				if err != nil {
-					logger.Log.Error(err.Error())
+					slog.Error(err.Error())
 					break
 				}
 				out := check.Results
@@ -731,15 +731,15 @@ func EvaluateResults(checkType CheckType) {
 					for _, file := range out {
 						fileSize, ok := file["FILE_SIZE"].(int64)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of fileSize '%s' to string", file["FILE_SIZE"])
+							slog.Error("Error during assertion of fileSize to string", "fileSize", file["FILE_SIZE"])
 						}
 						fileMTime, ok := file["FILE_MTIME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of fileMTime '%s' to string", file["FILE_MTIME"])
+							slog.Error("Error during assertion of fileMTime to string", "fileMTime", file["FILE_MTIME"])
 						}
 						fileName, ok := file["FILE_NAME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of fileName '%s' to string", file["FILE_NAME"])
+							slog.Error("Error during assertion of fileName to string", "fileName", file["FILE_NAME"])
 						}
 						affectedResources = append(affectedResources, struct {
 							FileName  string `json:"FileName"`
@@ -772,15 +772,15 @@ func EvaluateResults(checkType CheckType) {
 					for _, file := range check.Results {
 						fileSize, ok := file["FILE_SIZE"].(int64)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of fileSize '%s' to string", file["FILE_SIZE"])
+							slog.Error("Error during assertion of fileSize to string", "fileSize", file["FILE_SIZE"])
 						}
 						fileMTime, ok := file["FILE_MTIME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of fileMTime '%s' to string", file["FILE_MTIME"])
+							slog.Error("Error during assertion of fileMTime to string", "fileMTime", file["FILE_MTIME"])
 						}
 						fileName, ok := file["FILE_NAME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of fileName '%s' to string", file["FILE_NAME"])
+							slog.Error("Error during assertion of fileName to string", "fileName", file["FILE_NAME"])
 						}
 						affectedResources = append(affectedResources, struct {
 							FileName  string `json:"FileName"`
@@ -814,19 +814,19 @@ func EvaluateResults(checkType CheckType) {
 					for _, cert := range check.Results {
 						certPSEID, ok := cert["PSE_ID"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of certPSEID '%s' to string", cert["PSE_ID"])
+							slog.Error("Error during assertion of certPSEID to string", "certPSEID", cert["PSE_ID"])
 						}
 						certName, ok := cert["NAME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of certName '%s' to string", cert["NAME"])
+							slog.Error("Error during assertion of certName to string", "certName", cert["NAME"])
 						}
 						certPurpose, ok := cert["PURPOSE"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of certPurpose '%s' to string", cert["PURPOSE"])
+							slog.Error("Error during assertion of certPurpose to string", "certPurpose", cert["PURPOSE"])
 						}
 						certOwnerName, ok := cert["OWNER_NAME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of certOwnerName '%s' to string", cert["OWNER_NAME"])
+							slog.Error("Error during assertion of certOwnerName to string", "certOwnerName", cert["OWNER_NAME"])
 						}
 						affectedResources = append(affectedResources, struct {
 							CertPSEID     string `json:"CertPSEID"`
@@ -883,11 +883,11 @@ func EvaluateResults(checkType CheckType) {
 					}
 					jsonString, err := ds.JSON()
 					if err != nil {
-						logger.Log.Errorf("error while converting ds to JSON: %s\n", err.Error())
+						slog.Error("error while converting ds to JSON", "error", err.Error())
 					}
 					err = json.Unmarshal([]byte(jsonString), &affectedResources)
 					if err != nil {
-						logger.Log.Errorf("error during JSON unmarshalling: %s\n", err.Error())
+						slog.Error("error during JSON unmarshaling", "error", err.Error())
 					}
 					var resourcesAsInterface []interface{}
 					for _, resource := range affectedResources {
@@ -915,15 +915,15 @@ func EvaluateResults(checkType CheckType) {
 					for _, f := range check.Results {
 						name, ok := f["NAME"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of Name '%s' to string", f["NAME"])
+							slog.Error("Error during assertion of Name to string", "name", f["NAME"])
 						}
 						description, ok := f["DESCRIPTION"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of Description '%s' to string", f["DESCRIPTION"])
+							slog.Error("Error during assertion of Description to string", "description", f["DESCRIPTION"])
 						}
 						isEnabledString, ok := f["IS_ENABLED"].(string)
 						if !ok {
-							logger.Log.Errorf("Error during assertion of IsEnabled '%s' to string", f["IS_ENABLED"])
+							slog.Error("Error during assertion of IsEnabled to string", "isEnabled", f["IS_ENABLED"])
 						}
 						isEnabled := strings.ToLower(isEnabledString) == "true"
 						ds.AppendTagged(
@@ -961,7 +961,7 @@ func EvaluateResults(checkType CheckType) {
 					check.IssuesPresent = false
 				}
 			default:
-				logger.Log.Errorf("Unknown check name %s\n", check.Name)
+				slog.Error("Unknown check name", "name", check.Name)
 				os.Exit(1)
 			}
 		} else if check.Type == SSHType {
@@ -969,7 +969,7 @@ func EvaluateResults(checkType CheckType) {
 			case "EncryptionKeySAPHANASecureUserStore":
 				out, ok := check.Results[0]["stdOut"].(string)
 				if !ok {
-					logger.Log.Errorf("Error during assertion of SSH stdOut '%s' to string", check.Results[0]["stdOut"])
+					slog.Error("Error during assertion of SSH stdOut to string", "stdout", check.Results[0]["stdOut"])
 				}
 				if strings.Contains(out, "KEY FILE") {
 					check.IssuesPresent = false
@@ -979,7 +979,7 @@ func EvaluateResults(checkType CheckType) {
 					check.Out = "Encryption key (SSFS_HDB.KEY) not found, Secure User Store is not encrypted.\n"
 				}
 			default:
-				logger.Log.Errorf("Unknown check name %s\n", check.Name)
+				slog.Error("Unknown check name", "name", check.Name)
 				os.Exit(1)
 			}
 		}
